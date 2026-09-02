@@ -1,0 +1,10 @@
+export const PWD_SALT_ROUNDS = 12;
+export const ERROR_NOT_FOUND_DATA = 'Không tìm thấy dữ liệu!';
+export const ERROR_CODE_TAKEN = 'Mã đã được sử dụng!';
+export const CREATE_SUCCESS = 'Thêm mới thành công.';
+export const UPDATE_SUCCESS = 'Cập nhật thành công.';
+export const ACCEPT_SUCCESS = 'Duyệt thành công.';
+export const UPDATE_ACTIVE_SUCCESS = 'Cập nhật trạng thái thành công.';
+export const DELETE_SUCCESS = 'Xoá thành công.';
+export const IMPORT_SUCCESS = 'Import thành công.';
+export const ACTION_SUCCESS = 'Thao tác thành công.';

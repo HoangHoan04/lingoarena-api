@@ -1,0 +1,102 @@
+import { StringValue } from 'ms';
+
+const stringToBoolean = (value?: string): boolean => {
+  if (!value) return false;
+  return value.toLowerCase() === 'true' || value === '1';
+};
+
+const toNumber = (value: string | undefined, fallback: number): number => {
+  const n = Number(value);
+  return value !== undefined && value !== '' && Number.isFinite(n) ? n : fallback;
+};
+
+export function configEnv() {
+  return {
+    NODE_ENV: process.env.NODE_ENV || 'development',
+    PORT: toNumber(process.env.PORT, 3000),
+    TZ: process.env.TZ,
+    REQUEST_TIMEOUT: toNumber(process.env.REQUEST_TIMEOUT, 5000),
+    SWAGGER_USER: process.env.SWAGGER_USER,
+    SWAGGER_PASSWORD: process.env.SWAGGER_PASSWORD,
+    SWAGGER_TITLE: process.env.SWAGGER_TITLE,
+    SWAGGER_DESCRIPTION: process.env.SWAGGER_DESCRIPTION,
+    SWAGGER_VERSION: process.env.SWAGGER_VERSION,
+    KEY_SECRET: process.env.KEY_SECRET,
+    KEY_SCHEDULE: process.env.KEY_SCHEDULE,
+    DATABASE_URL: process.env.DATABASE_URL,
+    DB_PRIMARY_TYPE: process.env.DB_PRIMARY_TYPE as 'postgres' | 'mssql' | 'mysql',
+    DB_PRIMARY_HOST: process.env.DB_PRIMARY_HOST,
+    DB_PRIMARY_PORT: toNumber(process.env.DB_PRIMARY_PORT, 5432),
+    DB_PRIMARY_USERNAME: process.env.DB_PRIMARY_USERNAME,
+    DB_PRIMARY_PASSWORD: process.env.DB_PRIMARY_PASSWORD,
+    DB_PRIMARY_DATABASE: process.env.DB_PRIMARY_DATABASE,
+    DB_PRIMARY_SSL: stringToBoolean(process.env.DB_PRIMARY_SSL),
+    DB_PRIMARY_SSL_REJECT_UNAUTHORIZED: stringToBoolean(
+      process.env.DB_PRIMARY_SSL_REJECT_UNAUTHORIZED,
+    ),
+    DB_PRIMARY_LOGGING: stringToBoolean(process.env.DB_PRIMARY_LOGGING),
+    JWT_SECRET: process.env.JWT_SECRET,
+    JWT_EXPIRY: process.env.JWT_EXPIRY as StringValue,
+    JWT_REFRESH_TOKEN_SECRET: process.env.JWT_REFRESH_TOKEN_SECRET,
+    JWT_REFRESH_TOKEN_EXPIRY: process.env.JWT_REFRESH_TOKEN_EXPIRY as StringValue,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL,
+    GOOGLE_FRONTEND_REDIRECT_URL: process.env.GOOGLE_FRONTEND_REDIRECT_URL,
+    FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID,
+    FACEBOOK_APP_SECRET: process.env.FACEBOOK_APP_SECRET,
+    FACEBOOK_CALLBACK_URL: process.env.FACEBOOK_CALLBACK_URL,
+    FACEBOOK_FRONTEND_REDIRECT_URL: process.env.FACEBOOK_FRONTEND_REDIRECT_URL,
+    AWS_S3_ACCESS_KEY_ID: process.env.AWS_S3_ACCESS_KEY_ID,
+    AWS_S3_SECRET_ACCESS_KEY: process.env.AWS_S3_SECRET_ACCESS_KEY,
+    AWS_S3_BUCKET_NAME: process.env.AWS_S3_BUCKET_NAME,
+    LINK_UPLOAD_S3: process.env.LINK_UPLOAD_S3,
+    CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+    CATBOX_USERHASH: process.env.CATBOX_USERHASH,
+    EMAIL_VALIDATE_ACCOUNT: process.env.EMAIL_VALIDATE_ACCOUNT,
+    EMAIL_VALIDATE_PASSWORD: process.env.EMAIL_VALIDATE_PASSWORD,
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+    WEB_FE_URL: process.env.WEB_FE_URL,
+    WEB_FE_ACADEMY_URL: process.env.WEB_FE_ACADEMY_URL,
+    CUSTOMER_URL: process.env.CUSTOMER_URL,
+    BACKEND_WEBHOOK_URL: process.env.BACKEND_WEBHOOK_URL,
+    CANCEL_ORDER_MINUTES: toNumber(process.env.CANCEL_ORDER_MINUTES, 15),
+    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
+    FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
+    FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
+    FIREBASE_RESOURCE_PATH_FILE: process.env.FIREBASE_RESOURCE_PATH_FILE,
+    EXTERNAL_API_HOST: process.env.EXTERNAL_API_HOST,
+    EXTERNAL_API_PATH: process.env.EXTERNAL_API_PATH,
+    ZNS_SECRETKEY: process.env.ZNS_SECRETKEY,
+    ZNS_APP_ID: process.env.ZNS_APP_ID,
+    LIMIT_RQ_PER_SECOND_PER_IP: toNumber(process.env.LIMIT_RQ_PER_SECOND_PER_IP, 10),
+    LIMIT_RQ_PER_MINUTE_PER_IP: toNumber(process.env.LIMIT_RQ_PER_MINUTE_PER_IP, 100),
+    REDIS_HOST: process.env.REDIS_HOST,
+    REDIS_PORT: toNumber(process.env.REDIS_PORT, 6379),
+    REDIS_PASSWORD: process.env.REDIS_PASSWORD,
+    PROJECT_NAME: process.env.PROJECT_NAME,
+    SOURCE_CODE: process.env.SOURCE_CODE,
+    ENVIRONMENT: process.env.ENVIRONMENT,
+    LOG_URL: process.env.LOG_URL,
+    PERF_THRESHOLD_DURATION: toNumber(process.env.PERF_THRESHOLD_DURATION, 10000),
+    PERF_THRESHOLD_MEMORY: toNumber(process.env.PERF_THRESHOLD_MEMORY, 500),
+    PERF_THRESHOLD_CPU: toNumber(process.env.PERF_THRESHOLD_CPU, 500),
+    PERF_THRESHOLD_STALL: toNumber(process.env.PERF_THRESHOLD_STALL, 500),
+    TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
+    VIETQR_URL: process.env.VIETQR_URL,
+    VIETQR_USERNAME: process.env.VIETQR_USERNAME,
+    VIETQR_PASSWORD: process.env.VIETQR_PASSWORD,
+    VIETQR_CALLBACK_URL: process.env.VIETQR_CALLBACK_URL,
+    VIETQR_JWT_SECRET: process.env.VIETQR_JWT_SECRET,
+    RECAPTCHA_SECRET: process.env.RECAPTCHA_SECRET,
+    RECAPTCHA_ALLOWED_HOSTNAMES: process.env.RECAPTCHA_ALLOWED_HOSTNAMES,
+    SYSADMIN_PASSWORD: process.env.SYSADMIN_PASSWORD,
+    DISPLAY_TIMEZONE: process.env.DISPLAY_TIMEZONE,
+    MILLISECOND_OTP_EFFECT: toNumber(process.env.MILLISECOND_OTP_EFFECT, 300000),
+  };
+}
+
+export type AppConfig = ReturnType<typeof configEnv>;
