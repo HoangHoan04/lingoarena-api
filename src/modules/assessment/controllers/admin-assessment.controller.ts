@@ -1,16 +1,32 @@
 import { Body, Param, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { CurrentUser, DefController, DefGet, DefPatch, DefPost, DefPut } from '~/common/core/decorator';
+import { SkipThrottle } from '@nestjs/throttler';
+import {
+  CurrentUser,
+  DefController,
+  DefGet,
+  DefPatch,
+  DefPost,
+  DefPut,
+} from '~/common/core/decorator';
 import { JwtAuthGuard, PermissionGuard } from '~/common/guards';
-import { PaginationDto, UserDto } from '~/dto';
+import { ExcelImportBatchDto, PaginationDto, UserDto } from '~/dto';
 import {
   CreateAssessmentDto,
   CreateAssessmentItemDto,
   CreateAssessmentSectionDto,
+  CreateCertificateTemplateDto,
+  CreateRubricCriterionDto,
+  CreateRubricDto,
   FilterAssessmentDto,
+  FilterCertificateTemplateDto,
+  FilterRubricDto,
   UpdateAssessmentDto,
   UpdateAssessmentItemDto,
   UpdateAssessmentSectionDto,
+  UpdateCertificateTemplateDto,
+  UpdateRubricCriterionDto,
+  UpdateRubricDto,
 } from '../dto';
 import { AssessmentService } from '../service/assessment.service';
 
@@ -31,6 +47,17 @@ export class AdminAssessmentController {
     return this.service.create(dto, user);
   }
 
+  @SkipThrottle()
+  @DefPost('import')
+  importAssessments(@Body() dto: ExcelImportBatchDto, @CurrentUser() user: UserDto) {
+    return this.service.importAssessments(dto, user);
+  }
+
+  @DefPost('export-excel')
+  exportAssessments(@Body() body: PaginationDto<FilterAssessmentDto>) {
+    return this.service.exportAssessments(body);
+  }
+
   @DefGet(':id')
   findOne(@Param('id') id: string) {
     return this.service.findOne(id);
@@ -39,16 +66,6 @@ export class AdminAssessmentController {
   @DefPatch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateAssessmentDto, @CurrentUser() user: UserDto) {
     return this.service.update(id, dto, user);
-  }
-
-  @DefPut('publish/:id')
-  publish(@Param('id') id: string, @CurrentUser() user: UserDto) {
-    return this.service.publish(id, user);
-  }
-
-  @DefPut('archive/:id')
-  archive(@Param('id') id: string, @CurrentUser() user: UserDto) {
-    return this.service.archive(id, user);
   }
 
   @DefPut('deactivate/:id')
@@ -86,7 +103,11 @@ export class AdminAssessmentController {
   }
 
   @DefPut('items/:id')
-  updateItem(@Param('id') id: string, @Body() dto: UpdateAssessmentItemDto, @CurrentUser() user: UserDto) {
+  updateItem(
+    @Param('id') id: string,
+    @Body() dto: UpdateAssessmentItemDto,
+    @CurrentUser() user: UserDto,
+  ) {
     return this.service.updateItem(id, dto, user);
   }
 
@@ -98,5 +119,111 @@ export class AdminAssessmentController {
   @DefPost('attempts/pagination')
   paginationAttempts(@Body() body: PaginationDto<FilterAssessmentDto>) {
     return this.service.paginationAttempts(body);
+  }
+
+  @DefPost('rubrics/pagination')
+  paginationRubrics(@Body() body: PaginationDto<FilterRubricDto>) {
+    return this.service.paginationRubrics(body);
+  }
+
+  @DefPost('rubrics')
+  createRubric(@Body() dto: CreateRubricDto, @CurrentUser() user: UserDto) {
+    return this.service.createRubric(dto, user);
+  }
+
+  @SkipThrottle()
+  @DefPost('rubrics/import')
+  importRubrics(@Body() dto: ExcelImportBatchDto, @CurrentUser() user: UserDto) {
+    return this.service.importRubrics(dto, user);
+  }
+
+  @DefPost('rubrics/export-excel')
+  exportRubrics(@Body() body: PaginationDto<FilterRubricDto>) {
+    return this.service.exportRubrics(body);
+  }
+
+  @DefGet('rubrics/:id')
+  findRubric(@Param('id') id: string) {
+    return this.service.findRubric(id);
+  }
+
+  @DefPatch('rubrics/:id')
+  updateRubric(
+    @Param('id') id: string,
+    @Body() dto: UpdateRubricDto,
+    @CurrentUser() user: UserDto,
+  ) {
+    return this.service.updateRubric(id, dto, user);
+  }
+
+  @DefPut('rubrics/deactivate/:id')
+  deactivateRubric(@Param('id') id: string, @CurrentUser() user: UserDto) {
+    return this.service.deactivateRubric(id, user);
+  }
+
+  @DefPut('rubrics/activate/:id')
+  activateRubric(@Param('id') id: string, @CurrentUser() user: UserDto) {
+    return this.service.activateRubric(id, user);
+  }
+
+  @DefPost('rubric-criteria')
+  createRubricCriterion(@Body() dto: CreateRubricCriterionDto, @CurrentUser() user: UserDto) {
+    return this.service.createRubricCriterion(dto, user);
+  }
+
+  @DefPatch('rubric-criteria/:id')
+  updateRubricCriterion(
+    @Param('id') id: string,
+    @Body() dto: UpdateRubricCriterionDto,
+    @CurrentUser() user: UserDto,
+  ) {
+    return this.service.updateRubricCriterion(id, dto, user);
+  }
+
+  @DefPut('rubric-criteria/deactivate/:id')
+  deactivateRubricCriterion(@Param('id') id: string, @CurrentUser() user: UserDto) {
+    return this.service.deactivateRubricCriterion(id, user);
+  }
+
+  @DefPost('certificate-templates/pagination')
+  paginationCertificateTemplates(@Body() body: PaginationDto<FilterCertificateTemplateDto>) {
+    return this.service.paginationCertificateTemplates(body);
+  }
+
+  @DefPost('certificate-templates')
+  createCertificateTemplate(
+    @Body() dto: CreateCertificateTemplateDto,
+    @CurrentUser() user: UserDto,
+  ) {
+    return this.service.createCertificateTemplate(dto, user);
+  }
+
+  @DefGet('certificate-templates/:id')
+  findCertificateTemplate(@Param('id') id: string) {
+    return this.service.findCertificateTemplate(id);
+  }
+
+  @DefPatch('certificate-templates/:id')
+  updateCertificateTemplate(
+    @Param('id') id: string,
+    @Body() dto: UpdateCertificateTemplateDto,
+    @CurrentUser() user: UserDto,
+  ) {
+    return this.service.updateCertificateTemplate(id, dto, user);
+  }
+
+  @DefPut('certificate-templates/deactivate/:id')
+  deactivateCertificateTemplate(@Param('id') id: string, @CurrentUser() user: UserDto) {
+    return this.service.deactivateCertificateTemplate(id, user);
+  }
+
+  @DefPut('certificate-templates/activate/:id')
+  activateCertificateTemplate(@Param('id') id: string, @CurrentUser() user: UserDto) {
+    return this.service.activateCertificateTemplate(id, user);
+  }
+
+  @DefPost('grading-tasks/:id/run')
+  runGradingTask(@Param('id') id: string, @CurrentUser() user: UserDto) {
+    return this.service.runGradingTask(id, user);
   }
 }

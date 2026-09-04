@@ -1,46 +1,52 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { enumData } from '~/common/enums/base.enum';
-import { UserEntity } from '../auth/user.entity';
 import { PrimaryBaseEntity } from '../base.entity';
 import { AssessmentEntity } from './assessment.entity';
 import { AttemptQuestionEntity } from './attempt-question.entity';
-import { AttemptSectionEntity } from './attempt-section.entity';
 
+/**
+ * Bảng `assessment_attempts` — một lượt làm đề của người học.
+ *
+ * `expiresAt` là **bắt buộc** và tính ở server để chống làm quá giờ; không tin
+ * đồng hồ máy khách.
+ *
+ * Action log ghi ở mức bảng này (1 dòng khi submit) thay vì từng
+ * `attempt_answers`, theo quyết định 9.4.
+ */
 @Entity('assessment_attempts')
-@Index('idx_assessment_attempts_unique', ['assessmentId', 'userId', 'attemptNumber'], {
+@Index('uq_assessment_attempts_number', ['assessmentId', 'userId', 'attemptNumber'], {
   unique: true,
+  where: '"isDeleted" = false',
 })
-@Index('idx_assessment_attempts_user_status_started', ['userId', 'status', 'startedAt'])
-@Index('idx_assessment_attempts_user_id', ['userId'])
-@Index('idx_assessment_attempts_assessment_id', ['assessmentId'])
+@Index('idx_assessment_attempts_user', ['userId'])
 @Index('idx_assessment_attempts_status', ['status'])
 export class AssessmentAttemptEntity extends PrimaryBaseEntity {
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến bài đánh giá' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến đề thi' })
   @Column({ type: 'uuid' })
   assessmentId: string;
 
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người dùng' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người làm bài' })
   @Column({ type: 'uuid' })
   userId: string;
 
-  @ApiProperty({ description: 'Số thứ tự lượt làm bài', default: 1 })
+  @ApiProperty({ description: 'Lượt làm thứ mấy' })
   @Column({ type: 'int', default: 1 })
   attemptNumber: number;
 
   @ApiProperty({
     enum: enumData.ATTEMPT_STATUS,
     default: enumData.ATTEMPT_STATUS.IN_PROGRESS.code,
-    description: 'Trạng thái lượt làm bài',
+    description: 'Trạng thái lượt làm',
   })
   @Column({ type: 'varchar', length: 20, default: enumData.ATTEMPT_STATUS.IN_PROGRESS.code })
   status: string;
 
   @ApiProperty({ description: 'Thời điểm bắt đầu' })
-  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: 'timestamptz' })
   startedAt: Date;
 
-  @ApiProperty({ description: 'Thời điểm hết hạn làm bài' })
+  @ApiProperty({ description: 'Thời điểm hết hạn, tính ở server (bắt buộc)' })
   @Column({ type: 'timestamptz' })
   expiresAt: Date;
 
@@ -48,52 +54,49 @@ export class AssessmentAttemptEntity extends PrimaryBaseEntity {
   @Column({ type: 'timestamptz', nullable: true })
   submittedAt?: Date;
 
-  @ApiPropertyOptional({ description: 'Điểm trắc nghiệm khách quan', default: 0 })
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  @ApiPropertyOptional({ description: 'Điểm phần chấm tự động' })
+  @Column({ type: 'numeric', precision: 6, scale: 2, nullable: true })
   objectiveScore?: number;
 
-  @ApiPropertyOptional({ description: 'Điểm tự luận chủ quan', default: 0 })
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  @ApiPropertyOptional({ description: 'Điểm phần chấm chủ quan (AI / giáo viên)' })
+  @Column({ type: 'numeric', precision: 6, scale: 2, nullable: true })
   subjectiveScore?: number;
 
-  @ApiPropertyOptional({ description: 'Tổng điểm', default: 0 })
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  @ApiPropertyOptional({ description: 'Tổng điểm thô' })
+  @Column({ type: 'numeric', precision: 6, scale: 2, nullable: true })
   totalScore?: number;
 
-  @ApiPropertyOptional({ description: 'Điểm quy đổi (TOEIC 860, IELTS 7.5)' })
-  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  @ApiPropertyOptional({ description: 'Điểm quy đổi theo scoreSchema của kỳ thi' })
+  @Column({ type: 'numeric', precision: 6, scale: 2, nullable: true })
   convertedScore?: number;
 
-  @ApiPropertyOptional({ description: 'Kết quả chi tiết dạng JSON' })
+  @ApiProperty({
+    enum: enumData.GRADING_STATUS,
+    default: enumData.GRADING_STATUS.PENDING.code,
+    description: 'Trạng thái chấm bài',
+  })
+  @Column({ type: 'varchar', length: 20, default: enumData.GRADING_STATUS.PENDING.code })
+  gradingStatus: string;
+
+  @ApiPropertyOptional({ description: 'Báo cáo kết quả đã dựng sẵn để render nhanh' })
   @Column({ type: 'jsonb', nullable: true })
   resultJson?: Record<string, unknown>;
 
-  @ApiPropertyOptional({ description: 'Metadata client JSON (IP, User Agent, Screen stats)' })
-  @Column({ type: 'jsonb', nullable: true })
-  clientMetadata?: Record<string, unknown>;
-
-  @ApiPropertyOptional({ description: 'Heartbeat gần nhất từ client (server-authoritative timer)' })
+  @ApiPropertyOptional({ description: 'Nhịp tim gần nhất từ máy khách' })
   @Column({ type: 'timestamptz', nullable: true })
   lastHeartbeatAt?: Date;
 
-  @ApiProperty({ description: 'Số lần mất focus cửa sổ thi', default: 0 })
+  @ApiProperty({ description: 'Số lần rời khỏi tab khi đang thi' })
   @Column({ type: 'int', default: 0 })
   focusLossCount: number;
 
-  @ApiPropertyOptional({ description: 'Độ lệch đồng hồ client so với server (ms)' })
-  @Column({ type: 'int', nullable: true })
-  clientClockSkewMs?: number;
+  @ApiPropertyOptional({ description: 'Thông tin máy khách khi làm bài' })
+  @Column({ type: 'jsonb', nullable: true })
+  clientMetadataJson?: Record<string, unknown>;
 
-  @ManyToOne(() => AssessmentEntity, assessment => assessment.attempts, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => AssessmentEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'assessmentId' })
   assessment?: AssessmentEntity;
-
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user?: UserEntity;
-
-  @OneToMany(() => AttemptSectionEntity, section => section.attempt)
-  attemptSections?: AttemptSectionEntity[];
 
   @OneToMany(() => AttemptQuestionEntity, question => question.attempt)
   attemptQuestions?: AttemptQuestionEntity[];

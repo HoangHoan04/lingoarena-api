@@ -1,50 +1,47 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { PrimaryBaseEntity } from '../base.entity';
-import { QuestionVersionEntity } from '../question/question-version.entity';
-import { QuestionEntity } from '../question/question.entity';
 import { AssessmentAttemptEntity } from './assessment-attempt.entity';
 import { AttemptAnswerEntity } from './attempt-answer.entity';
-import { AttemptSectionEntity } from './attempt-section.entity';
 
+/**
+ * Bảng `attempt_questions` — bản chụp bất biến của câu hỏi tại thời điểm thi.
+ *
+ * Snapshot giữ lượt thi **đã làm** nguyên vẹn ngay cả khi version câu hỏi bị
+ * xoá. Cột `assessmentSectionId` thay hẳn bảng `attempt_sections` cũ.
+ */
 @Entity('attempt_questions')
-@Index('idx_attempt_questions_attempt_id', ['attemptId'])
-@Index('idx_attempt_questions_question_id', ['questionId'])
-@Index('idx_attempt_questions_unique', ['attemptId', 'questionId'], { unique: true })
+@Index('idx_attempt_questions_attempt', ['attemptId', 'sortOrder'])
 export class AttemptQuestionEntity extends PrimaryBaseEntity {
   @ApiProperty({ description: 'Khóa ngoại tham chiếu đến lượt làm bài' })
   @Column({ type: 'uuid' })
   attemptId: string;
 
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến phần của lượt làm bài' })
-  @Column({ type: 'uuid' })
-  attemptSectionId: string;
+  @ApiPropertyOptional({ description: 'Phần của đề — thay bảng attempt_sections' })
+  @Column({ type: 'uuid', nullable: true })
+  assessmentSectionId?: string;
 
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến câu hỏi' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến câu hỏi gốc' })
   @Column({ type: 'uuid' })
   questionId: string;
 
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến phiên bản câu hỏi' })
-  @Column({ type: 'uuid' })
-  questionVersionId: string;
-
-  @ApiProperty({ description: 'Snapshot nội dung câu hỏi đóng băng dạng JSON' })
+  @ApiProperty({ description: 'Bản chụp toàn bộ nội dung câu hỏi đã hiển thị' })
   @Column({ type: 'jsonb' })
   questionSnapshotJson: Record<string, unknown>;
 
-  @ApiProperty({ description: 'Snapshot đáp án chuẩn đóng băng dạng JSON' })
-  @Column({ type: 'jsonb' })
-  correctAnswerSnapshotJson: Record<string, unknown>;
+  @ApiPropertyOptional({ description: 'Bản chụp đáp án đúng' })
+  @Column({ type: 'jsonb', nullable: true })
+  correctAnswerSnapshotJson?: Record<string, unknown>;
 
-  @ApiProperty({ description: 'Số điểm của câu hỏi', default: 1 })
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 1 })
+  @ApiProperty({ description: 'Điểm của câu trong lượt thi này' })
+  @Column({ type: 'numeric', precision: 6, scale: 2, default: 1 })
   points: number;
 
-  @ApiProperty({ description: 'Thứ tự hiển thị', default: 0 })
+  @ApiProperty({ description: 'Thứ tự câu trong lượt thi' })
   @Column({ type: 'int', default: 0 })
   sortOrder: number;
 
-  @ApiPropertyOptional({ description: 'Thời điểm hiển thị câu hỏi cho thí sinh' })
+  @ApiPropertyOptional({ description: 'Thời điểm câu được hiển thị cho người học' })
   @Column({ type: 'timestamptz', nullable: true })
   displayedAt?: Date;
 
@@ -53,20 +50,6 @@ export class AttemptQuestionEntity extends PrimaryBaseEntity {
   })
   @JoinColumn({ name: 'attemptId' })
   attempt?: AssessmentAttemptEntity;
-
-  @ManyToOne(() => AttemptSectionEntity, section => section.attemptQuestions, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'attemptSectionId' })
-  attemptSection?: AttemptSectionEntity;
-
-  @ManyToOne(() => QuestionEntity, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'questionId' })
-  question?: QuestionEntity;
-
-  @ManyToOne(() => QuestionVersionEntity, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'questionVersionId' })
-  questionVersion?: QuestionVersionEntity;
 
   @OneToOne(() => AttemptAnswerEntity, answer => answer.attemptQuestion)
   answer?: AttemptAnswerEntity;

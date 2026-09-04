@@ -16,6 +16,12 @@ export class UserSessionEntity extends PrimaryBaseEntity {
   @Column({ type: 'varchar', length: 255, unique: true })
   tokenHash: string;
 
+  @ApiProperty({
+    description: 'Nhóm rotation của refresh token — phát hiện tái sử dụng token đã đổi',
+  })
+  @Column({ type: 'uuid' })
+  familyId: string;
+
   @ApiPropertyOptional({ description: 'Địa chỉ IP của máy khách' })
   @Column({ type: 'varchar', length: 45, nullable: true })
   ipAddress?: string;
@@ -27,6 +33,12 @@ export class UserSessionEntity extends PrimaryBaseEntity {
   @ApiPropertyOptional({ description: 'Loại thiết bị' })
   @Column({ type: 'varchar', length: 50, nullable: true })
   deviceType?: string;
+
+  @ApiPropertyOptional({
+    description: 'Thông tin thiết bị (fcmToken, platform) — thay bảng user_devices',
+  })
+  @Column({ type: 'jsonb', nullable: true })
+  deviceInfoJson?: Record<string, unknown>;
 
   @ApiProperty({ description: 'Thời điểm hết hạn' })
   @Column({ type: 'timestamptz' })

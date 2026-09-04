@@ -1,12 +1,14 @@
 import { Body, Param, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { CurrentUser, DefController, DefGet, DefPatch, DefPost, DefPut } from '~/common/core/decorator';
 import { JwtAuthGuard, PermissionGuard } from '~/common/guards';
-import { PaginationDto, UserDto } from '~/dto';
+import { ExcelImportBatchDto, PaginationDto, UserDto } from '~/dto';
 import {
   CreateCourseDto,
   CreateCourseSectionDto,
   CreateCourseVersionDto,
+  CreateCourseInstructorDto,
   CreateLessonBlockDto,
   CreateLessonDto,
   FilterCourseDto,
@@ -34,6 +36,19 @@ export class AdminCourseController {
   @ApiOperation({ summary: 'Tạo khóa học' })
   create(@Body() dto: CreateCourseDto, @CurrentUser() user: UserDto) {
     return this.service.create(dto, user);
+  }
+
+  @SkipThrottle()
+  @DefPost('import')
+  @ApiOperation({ summary: 'Nhập Excel khóa học' })
+  importCourses(@Body() dto: ExcelImportBatchDto, @CurrentUser() user: UserDto) {
+    return this.service.importCourses(dto, user);
+  }
+
+  @DefPost('export-excel')
+  @ApiOperation({ summary: 'Xuất Excel khóa học' })
+  exportCourses(@Body() body: PaginationDto<FilterCourseDto>) {
+    return this.service.exportCourses(body);
   }
 
   @DefGet(':id')
@@ -130,5 +145,17 @@ export class AdminCourseController {
   @ApiOperation({ summary: 'Ngưng block bài học' })
   deactivateBlock(@Param('id') id: string, @CurrentUser() user: UserDto) {
     return this.service.deactivateBlock(id, user);
+  }
+
+  @DefGet(':id/instructors')
+  @ApiOperation({ summary: 'Danh sách giảng viên khóa học' })
+  listInstructors(@Param('id') id: string) {
+    return this.service.listInstructors(id);
+  }
+
+  @DefPost('instructors')
+  @ApiOperation({ summary: 'Gán giảng viên khóa học' })
+  createInstructor(@Body() dto: CreateCourseInstructorDto, @CurrentUser() user: UserDto) {
+    return this.service.createInstructor(dto, user);
   }
 }

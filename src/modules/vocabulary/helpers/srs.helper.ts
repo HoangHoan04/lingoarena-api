@@ -2,6 +2,8 @@ import { enumData } from '~/common/enums/base.enum';
 import { UserVocabularyStateEntity } from '~/entities';
 
 export type SrsSnapshot = {
+  srsState: string;
+  /** Alias of srsState — giữ cho response phiên học cũ. */
   state: string;
   stability: number;
   difficulty: number;
@@ -41,29 +43,29 @@ export function applySm2Rating(
   let intervalDays = oldInterval;
   let repetitionCount = repetition;
   let lapseCount = lapse;
-  let state: string = STATE.LEARNING.code;
+  let srsState: string = STATE.LEARNING.code;
 
   if (rating === RATING.AGAIN.code) {
     intervalDays = 0;
     repetitionCount = 0;
     lapseCount = lapse + 1;
     difficulty = Math.min(10, difficulty + 0.8);
-    state = lapseCount > 0 ? STATE.LAPSED.code : STATE.LEARNING.code;
+    srsState = lapseCount > 0 ? STATE.LAPSED.code : STATE.LEARNING.code;
   } else if (rating === RATING.HARD.code) {
     intervalDays = Math.max(1, Math.round(oldInterval * 1.2) || 1);
     repetitionCount = repetition + 1;
     difficulty = Math.min(10, difficulty + 0.3);
-    state = STATE.LEARNING.code;
+    srsState = STATE.LEARNING.code;
   } else if (rating === RATING.EASY.code) {
     intervalDays = oldInterval === 0 ? 4 : Math.round(oldInterval * 3.5);
     repetitionCount = repetition + 1;
     difficulty = Math.max(1, difficulty - 0.3);
-    state = intervalDays >= 21 ? STATE.MASTERED.code : STATE.REVIEW.code;
+    srsState = intervalDays >= 21 ? STATE.MASTERED.code : STATE.REVIEW.code;
   } else {
     intervalDays = oldInterval === 0 ? 1 : Math.round(oldInterval * 2.5);
     repetitionCount = repetition + 1;
     difficulty = Math.max(1, difficulty - 0.15);
-    state = intervalDays >= 21 ? STATE.MASTERED.code : STATE.REVIEW.code;
+    srsState = intervalDays >= 21 ? STATE.MASTERED.code : STATE.REVIEW.code;
   }
 
   const nextReviewAt = new Date(now);
@@ -74,7 +76,8 @@ export function applySm2Rating(
   }
 
   return {
-    state,
+    srsState,
+    state: srsState,
     stability: intervalDays,
     difficulty: Number(difficulty.toFixed(2)),
     intervalDays,

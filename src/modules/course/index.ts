@@ -1,6 +1,15 @@
 import { MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ChildModule } from '~/common/core/decorator';
-import { CourseRepo, CourseVersionRepo, CourseInstructorRepo, CourseSectionRepo, LessonRepo, LessonBlockRepo, LessonBlockItemRepo, CourseEnrollmentRepo, CourseReviewRepo, LessonProgressRepo, LessonBlockProgressRepo } from '~/repositories';
+import {
+  CourseEnrollmentRepo,
+  CourseRepo,
+  ExamTypeRepo,
+  CourseReviewRepo,
+  CourseSectionRepo,
+  LessonBlockRepo,
+  LessonProgressRepo,
+  LessonRepo,
+} from '~/repositories';
 import { TypeOrmExModule } from '~/typeorm';
 import { ActionLogModule } from '../action-log';
 import { CourseService } from './service';
@@ -9,7 +18,16 @@ import { CourseService } from './service';
   providers: [CourseService],
   controllers: [],
   imports: [
-    TypeOrmExModule.forCustomRepository([CourseRepo, CourseVersionRepo, CourseInstructorRepo, CourseSectionRepo, LessonRepo, LessonBlockRepo, LessonBlockItemRepo, CourseEnrollmentRepo, CourseReviewRepo, LessonProgressRepo, LessonBlockProgressRepo]),
+    TypeOrmExModule.forCustomRepository([
+      CourseRepo,
+      ExamTypeRepo,
+      CourseSectionRepo,
+      LessonRepo,
+      LessonBlockRepo,
+      CourseEnrollmentRepo,
+      CourseReviewRepo,
+      LessonProgressRepo,
+    ]),
     ActionLogModule,
   ],
   exports: [CourseService],

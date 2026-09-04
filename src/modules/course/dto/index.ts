@@ -2,13 +2,16 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsObject,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
+  Min,
 } from 'class-validator';
 import { enumData } from '~/common/enums/base.enum';
 
@@ -39,12 +42,28 @@ export class CreateCourseDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(255)
+  titleEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   shortDescription?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  shortDescriptionEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   description?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  descriptionEn?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -66,11 +85,6 @@ export class CreateCourseDto {
   @Type(() => Number)
   @IsNumber()
   estimatedMinutes?: number;
-
-  @ApiPropertyOptional({ default: enumData.COURSE_STATUS.DRAFT.code })
-  @IsOptional()
-  @IsString()
-  status?: string;
 
   @ApiPropertyOptional({ default: enumData.VISIBILITY.PUBLIC.code })
   @IsOptional()
@@ -119,10 +133,15 @@ export class CreateCourseVersionDto {
 }
 
 export class CreateCourseSectionDto {
-  @ApiProperty()
-  @IsNotEmpty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsUUID()
-  courseVersionId: string;
+  courseId?: string;
+
+  @ApiPropertyOptional({ description: 'Alias courseId (form cũ dùng courseVersionId)' })
+  @IsOptional()
+  @IsUUID()
+  courseVersionId?: string;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -133,7 +152,18 @@ export class CreateCourseSectionDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(255)
+  titleEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   description?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  descriptionEn?: string;
 
   @ApiPropertyOptional({ default: 0 })
   @IsOptional()
@@ -156,6 +186,12 @@ export class CreateLessonDto {
   @MaxLength(255)
   title: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  titleEn?: string;
+
   @ApiPropertyOptional({ default: enumData.LESSON_TYPE.LECTURE.code })
   @IsOptional()
   @IsString()
@@ -177,11 +213,6 @@ export class CreateLessonDto {
   @Type(() => Number)
   @IsNumber()
   sortOrder?: number;
-
-  @ApiPropertyOptional({ default: enumData.LESSON_STATUS.DRAFT.code })
-  @IsOptional()
-  @IsString()
-  status?: string;
 }
 
 export class UpdateLessonDto extends CreateLessonDto {}
@@ -244,4 +275,46 @@ export class UpdateLessonProgressDto {
   @IsOptional()
   @IsUUID()
   lastBlockId?: string;
+
+  @ApiPropertyOptional({ description: 'Khối bài học vừa hoàn thành' })
+  @IsOptional()
+  @IsUUID()
+  blockId?: string;
+
+  @ApiPropertyOptional({ description: 'Vị trí đang xem trong bài' })
+  @IsOptional()
+  @IsObject()
+  lastPositionJson?: Record<string, unknown>;
+}
+
+export class CreateCourseInstructorDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsUUID()
+  courseId: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsUUID()
+  userId: string;
+
+  @ApiPropertyOptional({ default: 'lead_instructor' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  role?: string;
+}
+
+export class CreateCourseReviewDto {
+  @ApiProperty({ minimum: 1, maximum: 5 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  rating: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  comment?: string;
 }

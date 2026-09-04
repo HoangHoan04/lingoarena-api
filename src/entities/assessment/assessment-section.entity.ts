@@ -1,34 +1,37 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { PrimaryBaseEntity } from '../base.entity';
-import { ExamSkillEntity } from '../exam/exam-skill.entity';
+import { ExamStructureEntity } from '../exam/exam-structure.entity';
 import { AssessmentItemEntity } from './assessment-item.entity';
 import { AssessmentEntity } from './assessment.entity';
 
+/** Bảng `assessment_sections` — phần của đề thi, gắn với một kỹ năng. */
 @Entity('assessment_sections')
-@Index('idx_assessment_sections_assessment_id', ['assessmentId'])
+@Index('idx_assessment_sections_assessment', ['assessmentId'])
 export class AssessmentSectionEntity extends PrimaryBaseEntity {
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến bài đánh giá' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến đề thi' })
   @Column({ type: 'uuid' })
   assessmentId: string;
 
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến kỹ năng kỳ thi' })
+  @ApiProperty({
+    description: 'Khóa ngoại tham chiếu đến node cấu trúc kỳ thi (cấp SKILL)',
+  })
   @Column({ type: 'uuid' })
-  examSkillId: string;
+  examStructureId: string;
 
-  @ApiProperty({ description: 'Tiêu đề phần thi' })
+  @ApiProperty({ description: 'Tiêu đề phần' })
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
-  @ApiPropertyOptional({ description: 'Hướng dẫn làm phần thi' })
+  @ApiPropertyOptional({ description: 'Hướng dẫn làm phần này' })
   @Column({ type: 'text', nullable: true })
   instructions?: string;
 
-  @ApiPropertyOptional({ description: 'Thời lượng tính bằng giây', default: 0 })
-  @Column({ type: 'int', default: 0, nullable: true })
+  @ApiPropertyOptional({ description: 'Thời lượng riêng của phần (giây)' })
+  @Column({ type: 'int', nullable: true })
   durationSeconds?: number;
 
-  @ApiProperty({ description: 'Thứ tự sắp xếp', default: 0 })
+  @ApiProperty({ description: 'Thứ tự phần trong đề' })
   @Column({ type: 'int', default: 0 })
   sortOrder: number;
 
@@ -36,9 +39,9 @@ export class AssessmentSectionEntity extends PrimaryBaseEntity {
   @JoinColumn({ name: 'assessmentId' })
   assessment?: AssessmentEntity;
 
-  @ManyToOne(() => ExamSkillEntity, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'examSkillId' })
-  examSkill?: ExamSkillEntity;
+  @ManyToOne(() => ExamStructureEntity, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'examStructureId' })
+  examStructure?: ExamStructureEntity;
 
   @OneToMany(() => AssessmentItemEntity, item => item.assessmentSection)
   items?: AssessmentItemEntity[];

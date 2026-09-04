@@ -1,50 +1,65 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { PrimaryBaseEntity } from '../base.entity';
-import { ExamSkillEntity } from './exam-skill.entity';
+import { ExamStructureEntity } from './exam-structure.entity';
 
+/**
+ * Bảng `exam_types` — loại kỳ thi (TOEIC, IELTS, VSTEP, APTIS).
+ * Thang điểm mô tả bằng `scoreMin` / `scoreMax` / `scoreStep` / `scoreSchema`,
+ * KHÔNG dùng cột `scoringScale`.
+ */
 @Entity('exam_types')
-@Index('idx_exam_types_code', ['code'])
-@Index('idx_exam_types_is_active', ['isActive'])
+@Index('uq_exam_types_code_alive', ['code'], {
+  unique: true,
+  where: '"isDeleted" = false',
+})
 export class ExamTypeEntity extends PrimaryBaseEntity {
-  @ApiProperty({
-    description: 'Mã loại kỳ thi (TOEIC_LR, TOEIC_SW, IELTS_AC, IELTS_GEN, APTIS, VSTEP, GENERAL)',
-  })
-  @Column({ type: 'varchar', length: 50, unique: true })
+  @ApiProperty({ description: 'Mã kỳ thi (TOEIC, IELTS, VSTEP, APTIS)' })
+  @Column({ type: 'varchar', length: 20 })
   code: string;
 
-  @ApiProperty({ description: 'Tên hiển thị của kỳ thi' })
+  @ApiProperty({ description: 'Tên hiển thị' })
   @Column({ type: 'varchar', length: 100 })
   name: string;
 
-  @ApiPropertyOptional({ description: 'Mô tả chi tiết' })
+  @ApiPropertyOptional({ description: 'Tên tiếng Anh' })
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  nameEn?: string;
+
+  @ApiPropertyOptional({ description: 'Mô tả kỳ thi' })
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  @ApiProperty({ description: 'Điểm thấp nhất có thể đạt', default: 0 })
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  @ApiPropertyOptional({ description: 'Mô tả tiếng Anh' })
+  @Column({ type: 'text', nullable: true })
+  descriptionEn?: string;
+
+  @ApiProperty({ description: 'Điểm tối thiểu của thang điểm' })
+  @Column({ type: 'numeric', precision: 6, scale: 2, default: 0 })
   scoreMin: number;
 
-  @ApiProperty({ description: 'Điểm cao nhất có thể đạt' })
-  @Column({ type: 'decimal', precision: 5, scale: 2 })
+  @ApiProperty({ description: 'Điểm tối đa của thang điểm' })
+  @Column({ type: 'numeric', precision: 6, scale: 2, default: 100 })
   scoreMax: number;
 
-  @ApiProperty({ description: 'Bước tăng hợp lệ của điểm số', default: 1 })
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 1 })
+  @ApiProperty({ description: 'Bước nhảy điểm' })
+  @Column({ type: 'numeric', precision: 4, scale: 2, default: 1 })
   scoreStep: number;
 
-  @ApiPropertyOptional({ description: 'Cấu hình quy đổi và cấu trúc điểm JSON' })
+  @ApiPropertyOptional({ description: 'Bảng ánh xạ điểm sang band / level' })
   @Column({ type: 'jsonb', nullable: true })
   scoreSchema?: Record<string, unknown>;
 
-  @ApiProperty({ description: 'Trạng thái hoạt động', default: true })
-  @Column({ type: 'boolean', default: true })
-  isActive: boolean;
+  @ApiPropertyOptional({
+    description: 'Nội dung trang hub theo kỳ thi (mô tả part, tips) cho /practice/<code>',
+  })
+  @Column({ type: 'jsonb', nullable: true })
+  hubContentJson?: Record<string, unknown>;
 
-  @ApiProperty({ description: 'Thứ tự sắp xếp', default: 0 })
+  @ApiProperty({ description: 'Thứ tự hiển thị' })
   @Column({ type: 'int', default: 0 })
   sortOrder: number;
 
-  @OneToMany(() => ExamSkillEntity, skill => skill.examType)
-  skills?: ExamSkillEntity[];
+  @OneToMany(() => ExamStructureEntity, structure => structure.examType)
+  structures?: ExamStructureEntity[];
 }

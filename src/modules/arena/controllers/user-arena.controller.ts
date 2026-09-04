@@ -2,8 +2,8 @@ import { Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, DefController, DefGet, DefPost } from '~/common/core/decorator';
 import { JwtAuthGuard } from '~/common/guards';
-import { UserDto } from '~/dto';
-import { PracticeMatchDto, QueueArenaDto, SubmitArenaAnswerDto } from '../dto';
+import { PaginationDto, UserDto } from '~/dto';
+import { CreateArenaChallengeDto, FilterArenaDto, PracticeMatchDto, QueueArenaDto, SubmitArenaAnswerDto } from '../dto';
 import { ArenaService } from '../service/arena.service';
 
 @ApiBearerAuth()
@@ -15,8 +15,24 @@ export class UserArenaController {
 
   @DefGet('me/rating')
   @ApiOperation({ summary: 'Điểm Arena theo kỹ năng' })
-  getMyRating(@Query('examSkillId') examSkillId: string, @CurrentUser() user: UserDto) {
-    return this.service.getMyRating(examSkillId, user);
+  getMyRating(
+    @Query('examStructureId') examStructureId: string,
+    @Query('examSkillId') examSkillId: string,
+    @CurrentUser() user: UserDto,
+  ) {
+    return this.service.getMyRating(examStructureId || examSkillId, user);
+  }
+
+  @DefGet('me/matches')
+  @ApiOperation({ summary: 'Trận đấu của tôi' })
+  paginationMyMatches(@Body() body: PaginationDto<FilterArenaDto>, @CurrentUser() user: UserDto) {
+    return this.service.paginationMyMatches(body, user);
+  }
+
+  @DefPost('challenges')
+  @ApiOperation({ summary: 'Gửi lời thách đấu' })
+  createChallenge(@Body() dto: CreateArenaChallengeDto, @CurrentUser() user: UserDto) {
+    return this.service.createChallenge(dto, user);
   }
 
   @DefPost('queue')

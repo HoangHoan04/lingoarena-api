@@ -30,14 +30,17 @@ export class UserGrammarController {
 
   @UseGuards(JwtOptionalGuard)
   @DefPost('structures/pagination')
-  @ApiOperation({ summary: 'Danh sách cấu trúc ngữ pháp đã duyệt' })
+  @ApiOperation({ summary: 'Danh sách cấu trúc ngữ pháp' })
   paginationStructures(@Body() body: PaginationDto<FilterGrammarStructureDto>) {
-    return this.service.paginationStructures(body, true);
+    return this.service.paginationStructures({
+      ...body,
+      where: { ...(body?.where || {}), isDeleted: false },
+    });
   }
 
   @UseGuards(JwtOptionalGuard)
   @DefGet('structures/:id')
-  @ApiOperation({ summary: 'Chi tiết cấu trúc ngữ pháp đã duyệt' })
+  @ApiOperation({ summary: 'Chi tiết cấu trúc ngữ pháp' })
   findStructure(@Param('id') id: string) {
     return this.service.findStructure(id, true);
   }

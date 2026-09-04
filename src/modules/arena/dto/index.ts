@@ -1,10 +1,28 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsObject, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsInt, IsObject, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator';
 
-export class CreateArenaDto {}
+export class CreateArenaChallengeDto {
+  @ApiProperty()
+  @IsUUID()
+  opponentUserId: string;
 
-export class UpdateArenaDto extends CreateArenaDto {}
+  @ApiPropertyOptional({ description: 'Node cấu trúc cấp SKILL' })
+  @IsOptional()
+  @IsUUID()
+  examStructureId?: string;
+
+  @ApiPropertyOptional({ description: 'Alias cũ — map sang examStructureId' })
+  @IsOptional()
+  @IsUUID()
+  examSkillId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  message?: string;
+}
 
 export class FilterArenaDto {
   @ApiPropertyOptional({ description: 'Trạng thái đã xóa' })
@@ -16,27 +34,49 @@ export class FilterArenaDto {
   @IsString()
   status?: string;
 
-  @ApiPropertyOptional({ description: 'Kỹ năng thi đấu' })
+  @ApiPropertyOptional({ description: 'Node cấu trúc cấp SKILL' })
+  @IsOptional()
+  @IsUUID()
+  examStructureId?: string;
+
+  @ApiPropertyOptional({ description: 'Alias cũ — map sang examStructureId' })
   @IsOptional()
   @IsUUID()
   examSkillId?: string;
 }
 
 export class QueueArenaDto {
-  @ApiProperty()
+  @ApiPropertyOptional({ description: 'Node cấu trúc cấp SKILL' })
+  @IsOptional()
   @IsUUID()
-  examSkillId: string;
+  examStructureId?: string;
+
+  @ApiPropertyOptional({ description: 'Alias cũ — map sang examStructureId' })
+  @IsOptional()
+  @IsUUID()
+  examSkillId?: string;
 
   @ApiPropertyOptional({ default: 'RANKED' })
   @IsOptional()
   @IsString()
   matchMode?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  taxonomyId?: string;
 }
 
 export class PracticeMatchDto {
-  @ApiProperty()
+  @ApiPropertyOptional({ description: 'Node cấu trúc cấp SKILL' })
+  @IsOptional()
   @IsUUID()
-  examSkillId: string;
+  examStructureId?: string;
+
+  @ApiPropertyOptional({ description: 'Alias cũ — map sang examStructureId' })
+  @IsOptional()
+  @IsUUID()
+  examSkillId?: string;
 
   @ApiPropertyOptional({ default: 5 })
   @IsOptional()
@@ -44,6 +84,11 @@ export class PracticeMatchDto {
   @IsInt()
   @Min(1)
   questionCount?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  taxonomyId?: string;
 }
 
 export class SubmitArenaAnswerDto {

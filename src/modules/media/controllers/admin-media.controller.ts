@@ -1,8 +1,9 @@
 import { Body, Param, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { CurrentUser, DefController, DefGet, DefPost, DefPut } from '~/common/core/decorator';
 import { JwtAuthGuard, PermissionGuard } from '~/common/guards';
-import { PaginationDto, UserDto } from '~/dto';
+import { ExcelImportBatchDto, PaginationDto, UserDto } from '~/dto';
 import { CreateMediaAssetDto, FilterMediaAssetDto } from '../dto';
 import { MediaService } from '../service/media.service';
 
@@ -23,6 +24,19 @@ export class AdminMediaController {
   @ApiOperation({ summary: 'Đăng ký media asset sau upload' })
   createAsset(@Body() dto: CreateMediaAssetDto, @CurrentUser() user: UserDto) {
     return this.service.createAsset(dto, user);
+  }
+
+  @SkipThrottle()
+  @DefPost('assets/import')
+  @ApiOperation({ summary: 'Nhập Excel media asset' })
+  importAssets(@Body() dto: ExcelImportBatchDto, @CurrentUser() user: UserDto) {
+    return this.service.importAssets(dto, user);
+  }
+
+  @DefPost('assets/export-excel')
+  @ApiOperation({ summary: 'Xuất Excel media asset' })
+  exportAssets(@Body() body: PaginationDto<FilterMediaAssetDto>) {
+    return this.service.exportAssets(body);
   }
 
   @DefGet('assets/:id')

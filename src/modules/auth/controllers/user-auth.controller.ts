@@ -6,6 +6,7 @@ import { UserDto } from '~/dto';
 import {
   FacebookLoginDto,
   GoogleLoginDto,
+  LogoutDto,
   RefreshTokenDto,
   ResetPasswordDto,
   SendOtpDto,
@@ -43,6 +44,14 @@ export class UserAuthController {
   @DefPost('refresh-token')
   async refreshToken(@Body() data: RefreshTokenDto) {
     return await this.service.refreshToken(data);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Đăng xuất — thu hồi refresh token / phiên' })
+  @DefPost('logout')
+  async logout(@CurrentUser() user: UserDto, @Body() data: LogoutDto) {
+    return await this.service.logout(user, data?.refreshToken);
   }
 
   @ApiOperation({ summary: 'Chuyển hướng đăng nhập Google OAuth' })

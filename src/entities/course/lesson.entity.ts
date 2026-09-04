@@ -5,44 +5,37 @@ import { PrimaryBaseEntity } from '../base.entity';
 import { CourseSectionEntity } from './course-section.entity';
 import { LessonBlockEntity } from './lesson-block.entity';
 
+/** Bảng `lessons` — bài học trong một chương. */
 @Entity('lessons')
-@Index('idx_lessons_course_section_id', ['courseSectionId'])
+@Index('idx_lessons_section', ['courseSectionId', 'sortOrder'])
 export class LessonEntity extends PrimaryBaseEntity {
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến chương học phần' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến chương' })
   @Column({ type: 'uuid' })
   courseSectionId: string;
+
+  @ApiPropertyOptional({ description: 'Slug dùng trên URL' })
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  slug?: string;
 
   @ApiProperty({ description: 'Tiêu đề bài học' })
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
-  @ApiProperty({
-    enum: enumData.LESSON_TYPE,
-    default: enumData.LESSON_TYPE.LECTURE.code,
-    description: 'Loại bài học',
-  })
-  @Column({ type: 'varchar', length: 50, default: enumData.LESSON_TYPE.LECTURE.code })
+  @ApiProperty({ enum: enumData.LESSON_TYPE, description: 'Loại bài học' })
+  @Column({ type: 'varchar', length: 20 })
   lessonType: string;
 
-  @ApiPropertyOptional({ description: 'Thời lượng ước tính (phút)', default: 15 })
-  @Column({ type: 'int', default: 15 })
+  @ApiPropertyOptional({ description: 'Thời lượng dự kiến (phút)' })
+  @Column({ type: 'int', nullable: true })
   estimatedMinutes?: number;
 
-  @ApiProperty({ description: 'Cờ cho phép học thử miễn phí', default: false })
+  @ApiProperty({ description: 'Cho học thử không cần mua khóa' })
   @Column({ type: 'boolean', default: false })
   isPreview: boolean;
 
-  @ApiProperty({ description: 'Thứ tự sắp xếp', default: 0 })
+  @ApiProperty({ description: 'Thứ tự bài trong chương' })
   @Column({ type: 'int', default: 0 })
   sortOrder: number;
-
-  @ApiProperty({
-    enum: enumData.LESSON_STATUS,
-    default: enumData.LESSON_STATUS.DRAFT.code,
-    description: 'Trạng thái bài học',
-  })
-  @Column({ type: 'varchar', length: 50, default: enumData.LESSON_STATUS.DRAFT.code })
-  status: string;
 
   @ManyToOne(() => CourseSectionEntity, section => section.lessons, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'courseSectionId' })

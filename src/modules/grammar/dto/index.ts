@@ -1,7 +1,52 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
 import { enumData } from '~/common/enums/base.enum';
+
+export class GrammarExampleJsonDto {
+  @ApiPropertyOptional({
+    description: 'ID phần tử trong examplesJson (tạo khi dùng API examples/*)',
+  })
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @ApiProperty({ example: 'She goes to school every day.' })
+  @IsNotEmpty()
+  @IsString()
+  sentence: string;
+
+  @ApiProperty({ example: 'Cô ấy đi học mỗi ngày.' })
+  @IsNotEmpty()
+  @IsString()
+  translation: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  explanation?: string;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  isNegativeExample?: boolean;
+
+  @ApiPropertyOptional({ default: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  sortOrder?: number;
+}
 
 export class CreateGrammarTopicDto {
   @ApiPropertyOptional()
@@ -14,6 +59,12 @@ export class CreateGrammarTopicDto {
   @IsString()
   @MaxLength(255)
   title: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  titleEn?: string;
 
   @ApiProperty({ example: 'present-simple' })
   @IsNotEmpty()
@@ -31,13 +82,18 @@ export class CreateGrammarTopicDto {
   @IsString()
   description?: string;
 
+  @ApiPropertyOptional({ description: 'Không còn cột riêng — bỏ qua khi lưu' })
+  @IsOptional()
+  @IsString()
+  descriptionEn?: string;
+
   @ApiPropertyOptional({ default: 0 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   sortOrder?: number;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Không còn cột canonicalTopicId — bỏ qua khi lưu' })
   @IsOptional()
   @IsUUID()
   canonicalTopicId?: string;
@@ -83,6 +139,12 @@ export class CreateGrammarStructureDto {
   @MaxLength(255)
   title: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  titleEn?: string;
+
   @ApiProperty({ example: 'S + V(s/es) + O' })
   @IsNotEmpty()
   @IsString()
@@ -93,23 +155,46 @@ export class CreateGrammarStructureDto {
   @IsString()
   meaningVi: string;
 
-  @ApiProperty()
-  @IsNotEmpty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  usageContent: string;
+  meaningEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  usageContent?: string;
+
+  @ApiPropertyOptional({ description: 'Không còn cột riêng — bỏ qua khi lưu' })
+  @IsOptional()
+  @IsString()
+  usageContentEn?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   commonMistakes?: string;
 
-  @ApiPropertyOptional({
-    enum: enumData.CONTENT_REVIEW_STATUS,
-    default: enumData.CONTENT_REVIEW_STATUS.DRAFT.code,
-  })
+  @ApiPropertyOptional({ description: 'Không còn cột riêng — bỏ qua khi lưu' })
   @IsOptional()
   @IsString()
-  status?: string;
+  commonMistakesEn?: string;
+
+  @ApiPropertyOptional({ default: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  sortOrder?: number;
+
+  @ApiPropertyOptional({
+    type: [GrammarExampleJsonDto],
+    description: 'Ví dụ minh họa — thay bảng grammar_examples',
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GrammarExampleJsonDto)
+  examplesJson?: GrammarExampleJsonDto[];
 }
 
 export class UpdateGrammarStructureDto extends CreateGrammarStructureDto {}
@@ -127,11 +212,7 @@ export class FilterGrammarStructureDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  status?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
+  @IsBoolean()
   isDeleted?: boolean;
 }
 

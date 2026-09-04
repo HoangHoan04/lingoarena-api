@@ -1,66 +1,72 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
-import { PrimaryBaseEntity } from '../base.entity';
-import { CourseEntity } from '../course/course.entity';
-
 import { enumData } from '~/common/enums/base.enum';
+import { PrimaryBaseEntity } from '../base.entity';
+import { ExamStructureEntity } from '../exam/exam-structure.entity';
 import { ExamTypeEntity } from '../exam/exam-type.entity';
-import { AssessmentAttemptEntity } from './assessment-attempt.entity';
 import { AssessmentSectionEntity } from './assessment-section.entity';
 
+/**
+ * Bảng `assessments` — đề thi / bài kiểm tra có cấu trúc.
+ *
+ * `isFree = false` thì mở đề cần `user_entitlements` với
+ * `resourceType = assessment` (resourceId = id đề) hoặc `all_access`.
+ */
 @Entity('assessments')
-@Index('idx_assessments_slug', ['slug'], { unique: true })
-@Index('idx_assessments_exam_type_id', ['examTypeId'])
+@Index('uq_assessments_slug_alive', ['slug'], {
+  unique: true,
+  where: '"isDeleted" = false',
+})
+@Index('idx_assessments_exam_type', ['examTypeId'])
+@Index('idx_assessments_exam_structure', ['examStructureId'])
 @Index('idx_assessments_type', ['assessmentType'])
-@Index('idx_assessments_status', ['status'])
 export class AssessmentEntity extends PrimaryBaseEntity {
   @ApiProperty({ description: 'Khóa ngoại tham chiếu đến loại kỳ thi' })
   @Column({ type: 'uuid' })
   examTypeId: string;
 
-  @ApiPropertyOptional({ description: 'Khóa ngoại tham chiếu đến khóa học' })
+  @ApiPropertyOptional({
+    description: 'Kỹ năng chính của đề (node SKILL trong exam_structures)',
+  })
+  @Column({ type: 'uuid', nullable: true })
+  examStructureId?: string;
+
+  @ApiPropertyOptional({ description: 'Khóa ngoại tham chiếu đến khóa học (nếu đề thuộc khóa)' })
   @Column({ type: 'uuid', nullable: true })
   courseId?: string;
 
-  @ApiProperty({
-    enum: enumData.ASSESSMENT_TYPE,
-    default: enumData.ASSESSMENT_TYPE.MOCK_EXAM.code,
-    description: 'Loại bài đánh giá',
-  })
-  @Column({ type: 'varchar', length: 20, default: enumData.ASSESSMENT_TYPE.MOCK_EXAM.code })
+  @ApiProperty({ enum: enumData.ASSESSMENT_TYPE, description: 'Loại đề' })
+  @Column({ type: 'varchar', length: 30 })
   assessmentType: string;
 
-  @ApiProperty({ description: 'Tiêu đề bài đánh giá / đề thi' })
+  @ApiProperty({ description: 'Slug dùng trên URL' })
+  @Column({ type: 'varchar', length: 150 })
+  slug: string;
+
+  @ApiProperty({ description: 'Tiêu đề đề thi' })
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
-  @ApiProperty({ description: 'Chuỗi slug thân thiện với URL' })
-  @Column({ type: 'varchar', length: 255, unique: true })
-  slug: string;
-
-  @ApiPropertyOptional({ description: 'Mô tả chi tiết' })
+  @ApiPropertyOptional({ description: 'Mô tả' })
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  @ApiProperty({
-    description: 'Thời lượng tính bằng giây (0 = không giới hạn thời gian)',
-    default: 0,
-  })
-  @Column({ type: 'int', default: 0 })
+  @ApiProperty({ description: 'Thời lượng làm bài (giây)' })
+  @Column({ type: 'int' })
   durationSeconds: number;
 
-  @ApiPropertyOptional({ description: 'Số lần làm bài tối đa (0 = không giới hạn)', default: 0 })
-  @Column({ type: 'int', default: 0, nullable: true })
+  @ApiPropertyOptional({ description: 'Số lượt làm tối đa, null là không giới hạn' })
+  @Column({ type: 'int', nullable: true })
   maxAttempts?: number;
 
-  @ApiPropertyOptional({ description: 'Điểm chuẩn đạt' })
-  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  @ApiPropertyOptional({ description: 'Điểm đạt' })
+  @Column({ type: 'numeric', precision: 6, scale: 2, nullable: true })
   passingScore?: number;
 
   @ApiProperty({
     enum: enumData.SELECTION_MODE,
     default: enumData.SELECTION_MODE.FIXED.code,
-    description: 'Chế độ chọn câu hỏi',
+    description: 'Cách chọn câu hỏi',
   })
   @Column({ type: 'varchar', length: 20, default: enumData.SELECTION_MODE.FIXED.code })
   selectionMode: string;
@@ -72,24 +78,20 @@ export class AssessmentEntity extends PrimaryBaseEntity {
   })
   @Column({
     type: 'varchar',
-    length: 20,
+    length: 30,
     default: enumData.SHOW_ANSWERS_POLICY.AFTER_SUBMISSION.code,
   })
   showAnswersPolicy: string;
 
-  @ApiProperty({
-    enum: enumData.ASSESSMENT_STATUS,
-    default: enumData.ASSESSMENT_STATUS.DRAFT.code,
-    description: 'Trạng thái bài thi',
-  })
-  @Column({ type: 'varchar', length: 20, default: enumData.ASSESSMENT_STATUS.DRAFT.code })
-  status: string;
-
-  @ApiProperty({ description: 'Cờ làm bài miễn phí', default: false })
-  @Column({ type: 'boolean', default: false })
+  @ApiProperty({ description: 'Đề miễn phí hay cần quyền truy cập' })
+  @Column({ type: 'boolean', default: true })
   isFree: boolean;
 
-  @ApiPropertyOptional({ description: 'ID người tạo đề thi' })
+  @ApiProperty({ description: 'Số lượt đã làm — denormalize để list không phải count' })
+  @Column({ type: 'int', default: 0 })
+  attemptCount: number;
+
+  @ApiPropertyOptional({ description: 'Người tạo đề' })
   @Column({ type: 'uuid', nullable: true })
   createdByUserId?: string;
 
@@ -97,13 +99,10 @@ export class AssessmentEntity extends PrimaryBaseEntity {
   @JoinColumn({ name: 'examTypeId' })
   examType?: ExamTypeEntity;
 
-  @ManyToOne(() => CourseEntity, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({ name: 'courseId' })
-  course?: CourseEntity;
+  @ManyToOne(() => ExamStructureEntity, { onDelete: 'RESTRICT', nullable: true })
+  @JoinColumn({ name: 'examStructureId' })
+  examStructure?: ExamStructureEntity;
 
   @OneToMany(() => AssessmentSectionEntity, section => section.assessment)
   sections?: AssessmentSectionEntity[];
-
-  @OneToMany(() => AssessmentAttemptEntity, attempt => attempt.assessment)
-  attempts?: AssessmentAttemptEntity[];
 }

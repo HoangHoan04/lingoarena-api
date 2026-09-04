@@ -1,34 +1,48 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
-import { UserEntity } from '../auth/user.entity';
+import { enumData } from '~/common/enums/base.enum';
 import { PrimaryBaseEntity } from '../base.entity';
 import { SupportTicketEntity } from './support-ticket.entity';
 
+/**
+ * Bảng `support_ticket_messages` — tin nhắn trong phiếu hỗ trợ.
+ *
+ * `isInternalNote = true` không được trả về API user. Đây là lý do không gộp
+ * ticket vào `conversations`: mọi query phía customer phải lọc cột này.
+ *
+ * File kèm (N file) gắn qua `media_attachments` với ownerType = SupportTicketMessageEntity.
+ */
 @Entity('support_ticket_messages')
-@Index('idx_support_ticket_messages_ticket_id', ['ticketId'])
-@Index('idx_support_ticket_messages_created_at', ['createdAt'])
+@Index('idx_support_ticket_messages_ticket', ['supportTicketId', 'sentAt'])
 export class SupportTicketMessageEntity extends PrimaryBaseEntity {
   @ApiProperty({ description: 'Khóa ngoại tham chiếu đến phiếu hỗ trợ' })
   @Column({ type: 'uuid' })
-  ticketId: string;
+  supportTicketId: string;
 
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người gửi tin nhắn' })
-  @Column({ type: 'uuid' })
-  senderId: string;
+  @ApiPropertyOptional({ description: 'Người gửi. Null nếu tin hệ thống' })
+  @Column({ type: 'uuid', nullable: true })
+  senderUserId?: string;
 
-  @ApiProperty({ description: 'Nội dung tin nhắn' })
+  @ApiProperty({ enum: enumData.TICKET_SENDER_ROLE, description: 'Vai trò người gửi' })
+  @Column({ type: 'varchar', length: 20 })
+  senderRole: string;
+
+  @ApiProperty({ description: 'Nội dung tin' })
   @Column({ type: 'text' })
-  message: string;
+  content: string;
 
-  @ApiProperty({ description: 'Cờ ghi chú nội bộ (chỉ nhân viên thấy)', default: false })
+  @ApiProperty({
+    description: 'Ghi chú nội bộ — không trả về API user',
+    default: false,
+  })
   @Column({ type: 'boolean', default: false })
-  isInternal: boolean;
+  isInternalNote: boolean;
+
+  @ApiProperty({ description: 'Thời điểm gửi' })
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  sentAt: Date;
 
   @ManyToOne(() => SupportTicketEntity, ticket => ticket.messages, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'ticketId' })
+  @JoinColumn({ name: 'supportTicketId' })
   ticket?: SupportTicketEntity;
-
-  @ManyToOne(() => UserEntity, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'senderId' })
-  sender?: UserEntity;
 }

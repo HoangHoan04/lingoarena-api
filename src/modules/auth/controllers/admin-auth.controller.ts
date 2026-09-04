@@ -51,6 +51,22 @@ export class AdminAuthController {
     return await this.service.removeToken(id, user);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @ApiOperation({ summary: 'Đăng xuất quản trị' })
+  @DefPost('logout')
+  async logout(@CurrentUser() user: UserDto) {
+    return await this.service.logout(user);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @ApiOperation({ summary: 'Phân trang người dùng' })
+  @DefPost('users/pagination')
+  async paginationUsers(@Body() body: PaginationDto<any>) {
+    return await this.service.paginationUsers(body);
+  }
+
   @DefGet('get-token-id')
   async getTokenId() {
     return this.service.getTokenId();

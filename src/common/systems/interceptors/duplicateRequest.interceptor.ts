@@ -39,6 +39,8 @@ export class DuplicateRequestInterceptor implements NestInterceptor {
       'get',
       '/list',
       '/by-',
+      'assessment/start',
+      'heartbeat',
     ];
     const isWhiteRoute = arrWhiteRoute.some(c => url.includes(c));
 
@@ -46,7 +48,7 @@ export class DuplicateRequestInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const rawKey = `${process.env.TYPEORM_DATABASE}:${url}:${method}:#${user?.id}:${body ? JSON.stringify(body) : ''}`;
+    const rawKey = `${process.env.TYPEORM_DATABASE || 'default'}:${url}:${method}:#${user?.id}:${body ? JSON.stringify(body) : ''}`;
     const hashKey = createHash('sha256').update(rawKey).digest('hex');
     const duplicateCacheKey = `duplicate:${hashKey}`;
 
@@ -58,7 +60,7 @@ export class DuplicateRequestInterceptor implements NestInterceptor {
       );
     }
 
-    await this.cacheManager.set(duplicateCacheKey, '1', 5 * 60 * 1000);
+    await this.cacheManager.set(duplicateCacheKey, '1', 15 * 1000);
 
     return next.handle().pipe(
       finalize(() => {

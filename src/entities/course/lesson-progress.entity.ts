@@ -1,18 +1,23 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { enumData } from '~/common/enums/base.enum';
-import { UserEntity } from '../auth/user.entity';
 import { PrimaryBaseEntity } from '../base.entity';
-import { LessonBlockEntity } from './lesson-block.entity';
 import { LessonEntity } from './lesson.entity';
 
+/**
+ * Bảng `lesson_progress` — tiến độ của người học trên từng bài.
+ *
+ * Bỏ bảng `lesson_block_progress` cũ: vị trí đang xem trong bài lưu ở
+ * `lastPositionJson` (vd `{ blockId, videoSeconds }`), đủ để "học tiếp".
+ */
 @Entity('lesson_progress')
-@Index('idx_lesson_progress_user_lesson', ['userId', 'lessonId'], { unique: true })
-@Index('idx_lesson_progress_user_id', ['userId'])
-@Index('idx_lesson_progress_lesson_id', ['lessonId'])
-@Index('idx_lesson_progress_status', ['status'])
+@Index('uq_lesson_progress_user_lesson', ['userId', 'lessonId'], {
+  unique: true,
+  where: '"isDeleted" = false',
+})
+@Index('idx_lesson_progress_user', ['userId'])
 export class LessonProgressEntity extends PrimaryBaseEntity {
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người dùng' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người học' })
   @Column({ type: 'uuid' })
   userId: string;
 
@@ -23,40 +28,24 @@ export class LessonProgressEntity extends PrimaryBaseEntity {
   @ApiProperty({
     enum: enumData.PROGRESS_STATUS,
     default: enumData.PROGRESS_STATUS.NOT_STARTED.code,
-    description: 'Trạng thái tiến độ',
+    description: 'Trạng thái học bài',
   })
-  @Column({ type: 'varchar', length: 50, default: enumData.PROGRESS_STATUS.NOT_STARTED.code })
+  @Column({ type: 'varchar', length: 20, default: enumData.PROGRESS_STATUS.NOT_STARTED.code })
   status: string;
 
-  @ApiProperty({ description: 'Tỷ lệ hoàn thành (%)', default: 0 })
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  @ApiProperty({ description: 'Phần trăm hoàn thành bài' })
+  @Column({ type: 'numeric', precision: 5, scale: 2, default: 0 })
   progressPercent: number;
 
-  @ApiPropertyOptional({ description: 'Khóa ngoại tham chiếu đến block cuối đã học' })
-  @Column({ type: 'uuid', nullable: true })
-  lastBlockId?: string;
+  @ApiPropertyOptional({ description: 'Vị trí đang xem để tiếp tục học' })
+  @Column({ type: 'jsonb', nullable: true })
+  lastPositionJson?: Record<string, unknown>;
 
-  @ApiPropertyOptional({ description: 'Thời điểm bắt đầu bài học' })
-  @Column({ type: 'timestamptz', nullable: true })
-  startedAt?: Date;
-
-  @ApiPropertyOptional({ description: 'Thời điểm hoàn thành bài học' })
+  @ApiPropertyOptional({ description: 'Thời điểm hoàn thành bài' })
   @Column({ type: 'timestamptz', nullable: true })
   completedAt?: Date;
-
-  @ApiProperty({ description: 'Thời điểm truy cập gần nhất' })
-  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
-  lastAccessedAt: Date;
-
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user?: UserEntity;
 
   @ManyToOne(() => LessonEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'lessonId' })
   lesson?: LessonEntity;
-
-  @ManyToOne(() => LessonBlockEntity, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({ name: 'lastBlockId' })
-  lastBlock?: LessonBlockEntity;
 }

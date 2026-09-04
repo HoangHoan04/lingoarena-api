@@ -1,6 +1,17 @@
 import { MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ChildModule } from '~/common/core/decorator';
-import { ArenaChallengeRepo, ArenaMatchAnswerRepo, ArenaMatchParticipantRepo, ArenaMatchQuestionRepo, ArenaMatchRepo, ArenaQueueTicketRepo, ArenaRatingRepo, ArenaSeasonRepo, ArenaSeasonStandingRepo, QuestionOptionRepo, QuestionRepo, QuestionTypeRepo, QuestionVersionRepo, UserRepo } from '~/repositories';
+import {
+  ArenaChallengeRepo,
+  ArenaMatchAnswerRepo,
+  ArenaMatchParticipantRepo,
+  ArenaMatchQuestionRepo,
+  ArenaMatchRepo,
+  ArenaQueueTicketRepo,
+  ArenaRatingRepo,
+  QuestionOptionRepo,
+  QuestionRepo,
+  UserRepo,
+} from '~/repositories';
 import { TypeOrmExModule } from '~/typeorm';
 import { ActionLogModule } from '../action-log';
 import { GamificationModule } from '../gamification';
@@ -17,13 +28,9 @@ import { ArenaService } from './service';
       ArenaMatchParticipantRepo,
       ArenaMatchAnswerRepo,
       ArenaQueueTicketRepo,
-      ArenaSeasonRepo,
-      ArenaSeasonStandingRepo,
       ArenaChallengeRepo,
-      QuestionRepo,
-      QuestionVersionRepo,
-      QuestionOptionRepo,
-      QuestionTypeRepo,
+  QuestionRepo,
+  QuestionOptionRepo,
       UserRepo,
     ]),
     ActionLogModule,

@@ -1,17 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
-import { enumData } from '~/common/enums';
-import { UserEntity } from '../auth/user.entity';
+import { enumData } from '~/common/enums/base.enum';
 import { PrimaryBaseEntity } from '../base.entity';
 import { CourseEntity } from './course.entity';
 
+/** Bảng `course_enrollments` — người học đăng ký khóa học. */
 @Entity('course_enrollments')
-@Index('idx_course_enrollments_user_course', ['userId', 'courseId'], { unique: true })
-@Index('idx_course_enrollments_user_id', ['userId'])
-@Index('idx_course_enrollments_course_id', ['courseId'])
-@Index('idx_course_enrollments_status', ['status'])
+@Index('uq_course_enrollments_user_course', ['userId', 'courseId'], {
+  unique: true,
+  where: '"isDeleted" = false',
+})
+@Index('idx_course_enrollments_user', ['userId'])
 export class CourseEnrollmentEntity extends PrimaryBaseEntity {
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người dùng' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người học' })
   @Column({ type: 'uuid' })
   userId: string;
 
@@ -19,38 +20,33 @@ export class CourseEnrollmentEntity extends PrimaryBaseEntity {
   @Column({ type: 'uuid' })
   courseId: string;
 
-  @ApiProperty({
-    description:
-      'Nguồn cấp quyền ghi danh (subscription, onetime_purchase, classroom, admin_grant)',
+  @ApiPropertyOptional({
+    description: 'Nguồn đăng ký (order, subscription, classroom, manual_grant)',
   })
-  @Column({ type: 'varchar', length: 50 })
-  sourceType: string;
-
-  @ApiPropertyOptional({ description: 'ID đơn hàng hoặc lớp học nguồn' })
-  @Column({ type: 'uuid', nullable: true })
-  sourceId?: string;
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  sourceType?: string;
 
   @ApiProperty({
     enum: enumData.ENROLLMENT_STATUS,
-    default: enumData.ENROLLMENT_STATUS.ACTIVE.code,
-    description: 'Trạng thái ghi danh',
+    default: enumData.ENROLLMENT_STATUS.NOT_STARTED.code,
+    description: 'Trạng thái học',
   })
-  @Column({ type: 'varchar', length: 50, default: enumData.ENROLLMENT_STATUS.ACTIVE.code })
+  @Column({ type: 'varchar', length: 20, default: enumData.ENROLLMENT_STATUS.NOT_STARTED.code })
   status: string;
 
-  @ApiProperty({ description: 'Thời điểm ghi danh' })
+  @ApiProperty({ description: 'Phần trăm hoàn thành khóa' })
+  @Column({ type: 'numeric', precision: 5, scale: 2, default: 0 })
+  progressPercent: number;
+
+  @ApiProperty({ description: 'Thời điểm đăng ký' })
   @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   enrolledAt: Date;
 
-  @ApiPropertyOptional({ description: 'Thời điểm hết hạn quyền truy cập' })
+  @ApiPropertyOptional({ description: 'Thời điểm hoàn thành khóa' })
   @Column({ type: 'timestamptz', nullable: true })
-  accessExpiresAt?: Date;
+  completedAt?: Date;
 
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user?: UserEntity;
-
-  @ManyToOne(() => CourseEntity, course => course.enrollments, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => CourseEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'courseId' })
   course?: CourseEntity;
 }

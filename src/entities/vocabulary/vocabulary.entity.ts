@@ -1,22 +1,25 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { enumData } from '~/common/enums/base.enum';
 import { PrimaryBaseEntity } from '../base.entity';
-import { MediaAssetEntity } from '../media/media-asset.entity';
-import { VocabularyCollocationEntity } from './vocabulary-collocation.entity';
-import { VocabularyExamTypeEntity } from './vocabulary-exam-type.entity';
-import { VocabularyExampleEntity } from './vocabulary-example.entity';
 import { VocabularyRelationEntity } from './vocabulary-relation.entity';
-import { VocabularyTopicEntity } from './vocabulary-topic.entity';
 
+/**
+ * Bảng `vocabularies` — từ vựng trong từ điển.
+ *
+ * `examplesJson` và `collocationsJson` thay 2 bảng con cũ: dữ liệu này chỉ để
+ * hiển thị trong chi tiết từ, không bao giờ lọc / join theo, nên lưu jsonb.
+ * Ngược lại `vocabulary_relations` vẫn là bảng vì có khóa ngoại sang từ khác.
+ *
+ * Audio UK / US là 2 slot cố định khác nghĩa nên lưu URL thẳng, không tách bảng.
+ */
 @Entity('vocabularies')
-@Index('idx_vocabularies_norm_word', ['normalizedWord'])
 @Index('uq_vocabularies_word_pos_alive', ['normalizedWord', 'partOfSpeech'], {
   unique: true,
   where: '"isDeleted" = false',
 })
+@Index('idx_vocabularies_norm_word', ['normalizedWord'])
 @Index('idx_vocabularies_cefr_level', ['cefrLevel'])
-@Index('idx_vocabularies_status', ['status'])
 export class VocabularyEntity extends PrimaryBaseEntity {
   @ApiProperty({ description: 'Từ vựng gốc' })
   @Column({ type: 'varchar', length: 100 })
@@ -26,7 +29,7 @@ export class VocabularyEntity extends PrimaryBaseEntity {
   @Column({ type: 'varchar', length: 100 })
   normalizedWord: string;
 
-  @ApiProperty({ description: 'Từ loại (noun, verb, adjective, adverb, idiom, phrasal_verb)' })
+  @ApiProperty({ enum: enumData.PART_OF_SPEECH, description: 'Từ loại' })
   @Column({ type: 'varchar', length: 30 })
   partOfSpeech: string;
 
@@ -38,65 +41,54 @@ export class VocabularyEntity extends PrimaryBaseEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   ipaUs?: string;
 
-  @ApiPropertyOptional({ description: 'Khóa ngoại tham chiếu đến audio UK' })
-  @Column({ type: 'uuid', nullable: true })
-  audioUkAssetId?: string;
+  @ApiPropertyOptional({ description: 'Audio phát âm UK (1 file nên lưu URL thẳng)' })
+  @Column({ type: 'text', nullable: true })
+  audioUkUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Khóa ngoại tham chiếu đến audio US' })
-  @Column({ type: 'uuid', nullable: true })
-  audioUsAssetId?: string;
+  @ApiPropertyOptional({ description: 'Audio phát âm US (1 file nên lưu URL thẳng)' })
+  @Column({ type: 'text', nullable: true })
+  audioUsUrl?: string;
 
-  @ApiProperty({ description: 'Định nghĩa tiếng Anh' })
-  @Column({ type: 'text' })
-  definitionEn: string;
+  @ApiPropertyOptional({ description: 'Ảnh minh họa từ (1 ảnh nên lưu URL thẳng)' })
+  @Column({ type: 'text', nullable: true })
+  imageUrl?: string;
 
-  @ApiProperty({ description: 'Nghĩa tiếng Việt' })
+  @ApiPropertyOptional({ description: 'Định nghĩa tiếng Anh' })
+  @Column({ type: 'text', nullable: true })
+  definitionEn?: string;
+
+  @ApiPropertyOptional({ description: 'Định nghĩa tiếng Việt' })
+  @Column({ type: 'text', nullable: true })
+  definitionVi?: string;
+
+  @ApiProperty({ description: 'Nghĩa tiếng Việt ngắn gọn' })
   @Column({ type: 'text' })
   meaningVi: string;
 
   @ApiPropertyOptional({
     enum: enumData.CEFR_LEVEL,
-    default: enumData.CEFR_LEVEL.B1,
+    default: enumData.CEFR_LEVEL.B1.code,
     description: 'Trình độ CEFR',
   })
-  @Column({ type: 'varchar', length: 50, default: enumData.CEFR_LEVEL.B1.code })
+  @Column({ type: 'varchar', length: 10, default: enumData.CEFR_LEVEL.B1.code })
   cefrLevel?: string;
 
-  @ApiPropertyOptional({
-    description: 'Cấp độ tần suất xuất hiện (Oxford 3000/5000 index)',
-    default: 1,
-  })
+  @ApiProperty({ description: 'Cấp độ tần suất xuất hiện (Oxford 3000/5000)' })
   @Column({ type: 'int', default: 1 })
-  frequencyLevel?: number;
+  frequencyLevel: number;
 
-  @ApiProperty({
-    enum: enumData.CONTENT_REVIEW_STATUS,
-    default: enumData.CONTENT_REVIEW_STATUS.DRAFT.code,
-    description: 'Trạng thái kiểm duyệt',
+  @ApiPropertyOptional({
+    description: 'Ví dụ minh họa — thay bảng vocabulary_examples vì chỉ để hiển thị',
   })
-  @Column({ type: 'varchar', length: 50, default: enumData.CONTENT_REVIEW_STATUS.DRAFT.code })
-  status: string;
+  @Column({ type: 'jsonb', nullable: true })
+  examplesJson?: Record<string, unknown>[];
 
-  @ManyToOne(() => MediaAssetEntity, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({ name: 'audioUkAssetId' })
-  audioUkAsset?: MediaAssetEntity;
-
-  @ManyToOne(() => MediaAssetEntity, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({ name: 'audioUsAssetId' })
-  audioUsAsset?: MediaAssetEntity | null;
-
-  @OneToMany(() => VocabularyExampleEntity, example => example.vocabulary)
-  examples?: VocabularyExampleEntity[];
-
-  @OneToMany(() => VocabularyCollocationEntity, collocation => collocation.vocabulary)
-  collocations?: VocabularyCollocationEntity[];
+  @ApiPropertyOptional({
+    description: 'Cụm từ đi kèm — thay bảng vocabulary_collocations vì chỉ để hiển thị',
+  })
+  @Column({ type: 'jsonb', nullable: true })
+  collocationsJson?: Record<string, unknown>[];
 
   @OneToMany(() => VocabularyRelationEntity, relation => relation.vocabulary)
   relations?: VocabularyRelationEntity[];
-
-  @OneToMany(() => VocabularyTopicEntity, vt => vt.vocabulary)
-  vocabularyTopics?: VocabularyTopicEntity[];
-
-  @OneToMany(() => VocabularyExamTypeEntity, vet => vet.vocabulary)
-  vocabularyExamTypes?: VocabularyExamTypeEntity[];
 }

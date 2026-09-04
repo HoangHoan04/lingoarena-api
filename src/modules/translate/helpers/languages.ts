@@ -108,7 +108,7 @@ export function isSupportedLang(code: string): boolean {
   return (TRANSLATE_LANG_CODES as readonly string[]).includes(code);
 }
 
-export const TRANSLATE_TARGET_CODES = TRANSLATE_LANG_CODES.filter((code) => code !== 'auto');
+export const TRANSLATE_TARGET_CODES = TRANSLATE_LANG_CODES.filter(code => code !== 'auto');
 
 export function decodeHtmlEntities(text: string): string {
   return text

@@ -1,43 +1,45 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
-import { UserEntity } from '../auth/user.entity';
+import { Column, Entity, Index } from 'typeorm';
+import { enumData } from '~/common/enums/base.enum';
 import { PrimaryBaseEntity } from '../base.entity';
 
+/**
+ * Bảng `notifications` — thông báo in-app gửi tới một user.
+ * Tuỳ chọn nhận thông báo nằm ở `user_profiles.notificationPrefsJson`, không tách bảng.
+ */
 @Entity('notifications')
-@Index('idx_notifications_user_read_created', ['userId', 'readAt', 'createdAt'])
-@Index('idx_notifications_user_id', ['userId'])
+@Index('idx_notifications_user_read', ['userId', 'readAt', 'createdAt'])
+@Index('idx_notifications_type', ['type'])
 export class NotificationEntity extends PrimaryBaseEntity {
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người dùng nhận thông báo' })
+  @ApiProperty({ description: 'Người nhận thông báo' })
   @Column({ type: 'uuid' })
   userId: string;
 
-  @ApiProperty({
-    description: 'Loại thông báo (streak_reminder, grading_ready, payment_success, assignment_due)',
-  })
+  @ApiProperty({ enum: enumData.NOTIFICATION_TYPE, description: 'Loại thông báo' })
   @Column({ type: 'varchar', length: 50 })
   type: string;
 
-  @ApiProperty({ description: 'Tiêu đề thông báo' })
+  @ApiProperty({ description: 'Tiêu đề' })
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
-  @ApiProperty({ description: 'Nội dung thông báo' })
-  @Column({ type: 'text' })
-  body: string;
+  @ApiPropertyOptional({ description: 'Nội dung' })
+  @Column({ type: 'text', nullable: true })
+  body?: string;
 
-  @ApiPropertyOptional({ description: 'Đường dẫn liên kết hành động' })
+  @ApiPropertyOptional({ description: 'Đường dẫn khi người dùng bấm vào thông báo' })
   @Column({ type: 'text', nullable: true })
   actionUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Dữ liệu thông báo JSON bổ sung' })
+  @ApiPropertyOptional({ description: 'Payload phụ để UI render' })
   @Column({ type: 'jsonb', nullable: true })
-  data?: Record<string, unknown>;
+  dataJson?: Record<string, unknown>;
 
-  @ApiPropertyOptional({ description: 'Thời điểm đọc thông báo' })
+  @ApiPropertyOptional({ description: 'Thời điểm đã đọc. Null = chưa đọc' })
   @Column({ type: 'timestamptz', nullable: true })
   readAt?: Date;
 
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user?: UserEntity;
+  @ApiProperty({ description: 'Thời điểm gửi' })
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  sentAt: Date;
 }

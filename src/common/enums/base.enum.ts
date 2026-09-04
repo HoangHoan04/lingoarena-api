@@ -71,23 +71,6 @@ export const enumData = {
     NORMAL: { code: 'NORMAL', name: 'Normal' },
   },
 
-  USER_STATUS: {
-    PENDING: { code: 'PENDING', name: 'Chờ duyệt' },
-    ACTIVE: { code: 'ACTIVE', name: 'Hoạt động' },
-    SUSPENDED: { code: 'SUSPENDED', name: 'Bị treo' },
-    BANNED: { code: 'BANNED', name: 'Bị cấm' },
-    DELETED: { code: 'DELETED', name: 'Đã xóa' },
-  },
-
-  USER_ROLE: {
-    SUPER_ADMIN: { code: 'SUPER_ADMIN', name: 'Quản trị hệ thống' },
-    ADMIN: { code: 'ADMIN', name: 'Quản trị viên' },
-    STAFF: { code: 'STAFF', name: 'Nhân viên' },
-    MANAGER: { code: 'MANAGER', name: 'Quản lý' },
-    TEACHER: { code: 'TEACHER', name: 'Giảng viên' },
-    STUDENT: { code: 'STUDENT', name: 'Học viên' },
-  },
-
   SCOPE_TYPE: {
     GLOBAL: { code: 'GLOBAL', name: 'Toàn hệ thống' },
     CLASSROOM: { code: 'CLASSROOM', name: 'Lớp học' },
@@ -122,21 +105,14 @@ export const enumData = {
   },
 
   COURSE_STATUS: {
-    DRAFT: { code: 'DRAFT', name: 'Nháp' },
-    IN_REVIEW: { code: 'IN_REVIEW', name: 'Đang xem xét' },
-    PUBLISHED: { code: 'PUBLISHED', name: 'Đã xuất bản' },
-    ARCHIVED: { code: 'ARCHIVED', name: 'Đã lưu trữ' },
-  },
-
-  ASSESSMENT_STATUS: {
-    DRAFT: { code: 'DRAFT', name: 'Nháp' },
+    NEW: { code: 'NEW', name: 'Mới tạo' },
     IN_REVIEW: { code: 'IN_REVIEW', name: 'Đang xem xét' },
     PUBLISHED: { code: 'PUBLISHED', name: 'Đã xuất bản' },
     ARCHIVED: { code: 'ARCHIVED', name: 'Đã lưu trữ' },
   },
 
   LESSON_STATUS: {
-    DRAFT: { code: 'DRAFT', name: 'Nháp' },
+    NEW: { code: 'NEW', name: 'Mới tạo' },
     IN_REVIEW: { code: 'IN_REVIEW', name: 'Đang xem xét' },
     PUBLISHED: { code: 'PUBLISHED', name: 'Đã xuất bản' },
     ARCHIVED: { code: 'ARCHIVED', name: 'Đã lưu trữ' },
@@ -177,14 +153,6 @@ export const enumData = {
     COMPLETED: { code: 'COMPLETED', name: 'Đã hoàn thành' },
   },
 
-  CONTENT_REVIEW_STATUS: {
-    DRAFT: { code: 'DRAFT', name: 'Nháp' },
-    SUBMITTED: { code: 'SUBMITTED', name: 'Đã nộp' },
-    APPROVED: { code: 'APPROVED', name: 'Đã duyệt' },
-    REJECTED: { code: 'REJECTED', name: 'Bị từ chối' },
-    CHANGES_REQUESTED: { code: 'CHANGES_REQUESTED', name: 'Yêu cầu thay đổi' },
-  },
-
   QUESTION_TYPE_CODE: {
     SINGLE_CHOICE: { code: 'SINGLE_CHOICE', name: 'Một đáp án' },
     MULTI_CHOICE: { code: 'MULTI_CHOICE', name: 'Nhiều đáp án' },
@@ -205,6 +173,7 @@ export const enumData = {
   STIMULUS_TYPE: {
     PASSAGE: { code: 'passage', name: 'Đoạn văn' },
     AUDIO_CONVERSATION: { code: 'audio_conversation', name: 'Hội thoại audio' },
+    VIDEO_YOUTUBE: { code: 'video_youtube', name: 'Video YouTube' },
     IMAGE: { code: 'image', name: 'Hình ảnh' },
     TABLE: { code: 'table', name: 'Bảng' },
     CHART: { code: 'chart', name: 'Biểu đồ' },
@@ -323,7 +292,7 @@ export const enumData = {
   },
 
   CLASSROOM_STATUS: {
-    DRAFT: { code: 'DRAFT', name: 'Nháp' },
+    NEW: { code: 'NEW', name: 'Mới tạo' },
     ACTIVE: { code: 'ACTIVE', name: 'Đang hoạt động' },
     COMPLETED: { code: 'COMPLETED', name: 'Đã hoàn thành' },
     ARCHIVED: { code: 'ARCHIVED', name: 'Đã lưu trữ' },
@@ -372,12 +341,6 @@ export const enumData = {
       code: 'LOGIN_2FA',
       name: 'Xác thực đăng nhập hai bước',
     },
-  },
-
-  ORG_MEMBER_ROLE: {
-    OWNER: { code: 'OWNER', name: 'Chủ sở hữu' },
-    ADMIN: { code: 'ADMIN', name: 'Quản trị viên' },
-    MEMBER: { code: 'MEMBER', name: 'Thành viên' },
   },
 
   ARENA_MATCH_MODE: {
@@ -445,12 +408,6 @@ export const enumData = {
     ACTIVE: { code: 'active', name: 'Đang hoạt động' },
     SUSPENDED: { code: 'suspended', name: 'Tạm ngưng' },
     ARCHIVED: { code: 'archived', name: 'Đã lưu trữ' },
-  },
-
-  CLASSROOM_MEMBER_ROLE: {
-    STUDENT: { code: 'student', name: 'Học viên' },
-    TEACHING_ASSISTANT: { code: 'teaching_assistant', name: 'Trợ giảng' },
-    CO_TEACHER: { code: 'co_teacher', name: 'Đồng giáo viên' },
   },
 
   CLASSROOM_MEMBER_STATUS: {
@@ -540,12 +497,14 @@ export const enumData = {
     ERROR_REVIEW: { code: 'error_review', name: 'Ôn lỗi' },
   },
 
+  /**
+   * Không còn `VOCABULARY` — SRS từ vựng có bảng riêng `user_vocabulary_states`.
+   */
   MASTERY_ENTITY_TYPE: {
     SKILL: { code: 'skill', name: 'Kỹ năng' },
     TOPIC: { code: 'topic', name: 'Chủ đề' },
-    QUESTION_TYPE: { code: 'question_type', name: 'Dạng câu' },
     GRAMMAR: { code: 'grammar', name: 'Ngữ pháp' },
-    VOCABULARY: { code: 'vocabulary', name: 'Từ vựng' },
+    QUESTION: { code: 'question', name: 'Câu hỏi' },
   },
 
   ARENA_QUEUE_STATUS: {
@@ -600,12 +559,6 @@ export const enumData = {
     VOID: { code: 'VOID', name: 'Hủy' },
   },
 
-  CONTACT_STATUS: {
-    NEW: { code: 'NEW', name: 'Mới' },
-    IN_PROGRESS: { code: 'IN_PROGRESS', name: 'Đang xử lý' },
-    RESOLVED: { code: 'RESOLVED', name: 'Đã xử lý' },
-  },
-
   DAILY_CHALLENGE_TYPE: {
     VOCAB_REVIEW: { code: 'VOCAB_REVIEW', name: 'Ôn từ vựng' },
     ARENA_MATCH: { code: 'ARENA_MATCH', name: 'Đấu arena' },
@@ -618,5 +571,119 @@ export const enumData = {
     IN_PROGRESS: { code: 'IN_PROGRESS', name: 'Đang ôn' },
     COMPLETED: { code: 'COMPLETED', name: 'Hoàn thành' },
     ABANDONED: { code: 'ABANDONED', name: 'Bỏ dở' },
+  },
+
+  /** Phân loại `taxonomies` — gộp `topics` + `tags` cũ. */
+  TAXONOMY_KIND: {
+    TOPIC: { code: 'TOPIC', name: 'Chủ đề' },
+    TAG: { code: 'TAG', name: 'Nhãn' },
+    CATEGORY: { code: 'CATEGORY', name: 'Danh mục' },
+  },
+
+  /** Cấp node trong cây `exam_structures` — gộp `exam_skills` + `exam_sections` cũ. */
+  EXAM_NODE_TYPE: {
+    SKILL: { code: 'SKILL', name: 'Kỹ năng' },
+    SECTION: { code: 'SECTION', name: 'Phần' },
+    PART: { code: 'PART', name: 'Part' },
+  },
+
+  /** Mục đích file trong `media_attachments` (N file đa hình). */
+  MEDIA_PURPOSE: {
+    IMAGE: { code: 'IMAGE', name: 'Hình ảnh' },
+    AUDIO: { code: 'AUDIO', name: 'Âm thanh' },
+    RESOURCE: { code: 'RESOURCE', name: 'Tài liệu kèm' },
+    SUBMISSION: { code: 'SUBMISSION', name: 'Bài nộp' },
+    GALLERY: { code: 'GALLERY', name: 'Thư viện ảnh' },
+  },
+
+  CONTENT_PAGE_STATUS: {
+    DRAFT: { code: 'DRAFT', name: 'Nháp' },
+    PUBLISHED: { code: 'PUBLISHED', name: 'Đã xuất bản' },
+  },
+
+  /** Loại phiên học nhẹ trong `study_sessions`. */
+  STUDY_SESSION_TYPE: {
+    VOCAB_REVIEW: { code: 'VOCAB_REVIEW', name: 'Ôn từ vựng' },
+    VOCAB_GAME: { code: 'VOCAB_GAME', name: 'Game từ vựng' },
+    DICTATION: { code: 'DICTATION', name: 'Nghe chép chính tả' },
+    READING: { code: 'READING', name: 'Luyện đọc' },
+    QUESTION_PRACTICE: { code: 'QUESTION_PRACTICE', name: 'Luyện câu hỏi' },
+  },
+
+  /** Loại luồng hội thoại. Ticket hỗ trợ KHÔNG dùng bảng này. */
+  CONVERSATION_TYPE: {
+    AI_TUTOR: { code: 'AI_TUTOR', name: 'Hội thoại AI' },
+    SPEAKING_ROOM: { code: 'SPEAKING_ROOM', name: 'Phòng luyện nói' },
+    CLASSROOM: { code: 'CLASSROOM', name: 'Thông báo lớp học' },
+  },
+
+  CONVERSATION_STATUS: {
+    OPEN: { code: 'OPEN', name: 'Đang mở' },
+    CLOSED: { code: 'CLOSED', name: 'Đã đóng' },
+  },
+
+  /** Vai trò người gửi tin trong `conversation_messages`. */
+  CONVERSATION_ROLE: {
+    USER: { code: 'USER', name: 'Người dùng' },
+    AI: { code: 'AI', name: 'Trợ lý AI' },
+    SYSTEM: { code: 'SYSTEM', name: 'Hệ thống' },
+  },
+
+  CONVERSATION_PARTICIPANT_ROLE: {
+    HOST: { code: 'HOST', name: 'Chủ phòng' },
+    MEMBER: { code: 'MEMBER', name: 'Thành viên' },
+  },
+
+  /** Vai trò người gửi tin trong `support_ticket_messages`. */
+  TICKET_SENDER_ROLE: {
+    USER: { code: 'USER', name: 'Khách hàng' },
+    AGENT: { code: 'AGENT', name: 'Nhân viên hỗ trợ' },
+    SYSTEM: { code: 'SYSTEM', name: 'Hệ thống' },
+  },
+
+  TICKET_CATEGORY: {
+    ACCOUNT: { code: 'ACCOUNT', name: 'Tài khoản' },
+    PAYMENT: { code: 'PAYMENT', name: 'Thanh toán' },
+    CONTENT_ERROR: { code: 'CONTENT_ERROR', name: 'Nội dung sai' },
+    TECHNICAL: { code: 'TECHNICAL', name: 'Lỗi kỹ thuật' },
+    GRADING: { code: 'GRADING', name: 'Chấm bài' },
+    OTHER: { code: 'OTHER', name: 'Khác' },
+  },
+
+  NOTIFICATION_TYPE: {
+    SYSTEM: { code: 'SYSTEM', name: 'Hệ thống' },
+    LEARNING_REMINDER: { code: 'LEARNING_REMINDER', name: 'Nhắc học' },
+    REVIEW_DUE: { code: 'REVIEW_DUE', name: 'Đến hạn ôn tập' },
+    ARENA: { code: 'ARENA', name: 'Đấu trường' },
+    ACHIEVEMENT: { code: 'ACHIEVEMENT', name: 'Huy hiệu' },
+    ORDER: { code: 'ORDER', name: 'Đơn hàng' },
+    CLASSROOM: { code: 'CLASSROOM', name: 'Lớp học' },
+    SUPPORT: { code: 'SUPPORT', name: 'Hỗ trợ' },
+    GRADING_DONE: { code: 'GRADING_DONE', name: 'Đã chấm xong' },
+  },
+
+  DISCOUNT_TYPE: {
+    PERCENT: { code: 'PERCENT', name: 'Phần trăm' },
+    FIXED_AMOUNT: { code: 'FIXED_AMOUNT', name: 'Số tiền cố định' },
+  },
+
+  REWARD_TYPE: {
+    POINTS: { code: 'POINTS', name: 'Điểm thưởng' },
+    DISCOUNT: { code: 'DISCOUNT', name: 'Giảm giá' },
+    FREE_DAYS: { code: 'FREE_DAYS', name: 'Ngày dùng miễn phí' },
+  },
+
+  BILLING_PERIOD: {
+    ONE_TIME: { code: 'ONE_TIME', name: 'Một lần' },
+    MONTHLY: { code: 'MONTHLY', name: 'Hằng tháng' },
+    QUARTERLY: { code: 'QUARTERLY', name: 'Hằng quý' },
+    YEARLY: { code: 'YEARLY', name: 'Hằng năm' },
+  },
+
+  ORG_MEMBER_ROLE: {
+    OWNER: { code: 'OWNER', name: 'Chủ tổ chức' },
+    ADMIN: { code: 'ADMIN', name: 'Quản trị' },
+    TEACHER: { code: 'TEACHER', name: 'Giáo viên' },
+    MEMBER: { code: 'MEMBER', name: 'Thành viên' },
   },
 } as const;

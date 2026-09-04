@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-  IsBoolean,
   IsNotEmpty,
   IsNumber,
   IsObject,
@@ -27,7 +26,18 @@ export class CreateExamTypeDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(100)
+  nameEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   description?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  descriptionEn?: string;
 
   @ApiPropertyOptional({ default: 0 })
   @IsOptional()
@@ -51,10 +61,59 @@ export class CreateExamTypeDto {
   @IsObject()
   scoreSchema?: Record<string, unknown>;
 
-  @ApiPropertyOptional({ default: true })
+  @ApiPropertyOptional({ default: 0 })
   @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
+  @Type(() => Number)
+  @IsNumber()
+  sortOrder?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObject()
+  hubContentJson?: Record<string, unknown>;
+}
+
+export class UpdateExamTypeDto extends CreateExamTypeDto {}
+
+export class CreateExamStructureDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsUUID()
+  examTypeId: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  parentId?: string;
+
+  @ApiProperty({ example: 'SKILL' })
+  @IsNotEmpty()
+  @IsString()
+  nodeType: string;
+
+  @ApiProperty({ example: 'LISTENING' })
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(50)
+  code: string;
+
+  @ApiProperty({ example: 'Listening' })
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(150)
+  name: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  nameEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  partNumber?: number;
 
   @ApiPropertyOptional({ default: 0 })
   @IsOptional()
@@ -63,7 +122,38 @@ export class CreateExamTypeDto {
   sortOrder?: number;
 }
 
-export class UpdateExamTypeDto extends CreateExamTypeDto {}
+export class UpdateExamStructureDto extends CreateExamStructureDto {}
+
+export class FilterExamStructureDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  keyword?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  examTypeId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  parentId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  nodeType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  code?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  isDeleted?: boolean;
+}
 
 export class FilterExamTypeDto {
   @ApiPropertyOptional()
@@ -75,10 +165,6 @@ export class FilterExamTypeDto {
   @IsOptional()
   @IsString()
   code?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  isActive?: boolean;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -102,6 +188,12 @@ export class CreateExamSkillDto {
   @IsString()
   @MaxLength(100)
   name: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  nameEn?: string;
 
   @ApiPropertyOptional({ default: 0 })
   @IsOptional()
@@ -165,7 +257,18 @@ export class CreateExamSectionDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(100)
+  nameEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   instructions?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  instructionsEn?: string;
 
   @ApiPropertyOptional({ default: 0 })
   @IsOptional()

@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { PrimaryBaseEntity } from '../base.entity';
-import { RolePermissionEntity } from './role-permission.entity';
 import { UserRoleEntity } from './user-role.entity';
 
 @Entity('roles')
@@ -15,6 +14,10 @@ export class RoleEntity extends PrimaryBaseEntity {
   @Column({ type: 'varchar', length: 100 })
   name: string;
 
+  @ApiPropertyOptional({ description: 'Tên tiếng Anh' })
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  nameEn?: string;
+
   @ApiPropertyOptional({ description: 'Mô tả chi tiết' })
   @Column({ type: 'text', nullable: true })
   description?: string;
@@ -23,9 +26,13 @@ export class RoleEntity extends PrimaryBaseEntity {
   @Column({ type: 'boolean', default: false })
   isSystem: boolean;
 
+  @ApiProperty({
+    description: 'Danh sách mã quyền — thay 2 bảng permissions + role_permissions',
+    type: [String],
+  })
+  @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })
+  permissionCodes: string[];
+
   @OneToMany(() => UserRoleEntity, userRole => userRole.role)
   userRoles?: UserRoleEntity[];
-
-  @OneToMany(() => RolePermissionEntity, rolePermission => rolePermission.role)
-  rolePermissions?: RolePermissionEntity[];
 }

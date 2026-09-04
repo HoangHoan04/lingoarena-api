@@ -2,60 +2,54 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { enumData } from '~/common/enums/base.enum';
 import { PrimaryBaseEntity } from '../base.entity';
-import { TopicEntity } from '../question/topic.entity';
 import { GrammarStructureEntity } from './grammar-structure.entity';
 
+/** Bảng `grammar_topics` — chủ đề ngữ pháp, phân cấp bằng `parentId`. */
 @Entity('grammar_topics')
-@Index('idx_grammar_topics_slug', ['slug'], { unique: true })
-@Index('idx_grammar_topics_parent_id', ['parentId'])
-@Index('idx_grammar_topics_canonical_topic', ['canonicalTopicId'])
+@Index('uq_grammar_topics_slug_alive', ['slug'], {
+  unique: true,
+  where: '"isDeleted" = false',
+})
+@Index('idx_grammar_topics_parent', ['parentId'])
 export class GrammarTopicEntity extends PrimaryBaseEntity {
-  @ApiPropertyOptional({ description: 'Khóa ngoại tham chiếu đến chủ đề ngữ pháp cha' })
+  @ApiPropertyOptional({ description: 'Chủ đề cha, null nếu là gốc' })
   @Column({ type: 'uuid', nullable: true })
   parentId?: string;
 
-  @ApiProperty({ description: 'Tiêu đề chủ đề ngữ pháp' })
+  @ApiProperty({ description: 'Slug dùng trên URL' })
+  @Column({ type: 'varchar', length: 150 })
+  slug: string;
+
+  @ApiProperty({ description: 'Tiêu đề chủ đề' })
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
-  @ApiProperty({ description: 'Chuỗi slug thân thiện với URL' })
-  @Column({ type: 'varchar', length: 255, unique: true })
-  slug: string;
+  @ApiPropertyOptional({ description: 'Tiêu đề tiếng Anh' })
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  titleEn?: string;
 
-  @ApiPropertyOptional({
-    enum: enumData.CEFR_LEVEL,
-    default: enumData.CEFR_LEVEL.A2,
-    description: 'Trình độ CEFR',
-  })
-  @Column({ type: 'varchar', length: 50, default: enumData.CEFR_LEVEL.A2.code })
-  cefrLevel?: string;
-
-  @ApiPropertyOptional({ description: 'Mô tả chi tiết' })
+  @ApiPropertyOptional({ description: 'Mô tả' })
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  @ApiProperty({ description: 'Thứ tự sắp xếp', default: 0 })
+  @ApiPropertyOptional({ enum: enumData.CEFR_LEVEL, description: 'Trình độ CEFR' })
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  cefrLevel?: string;
+
+  @ApiProperty({ description: 'Thứ tự hiển thị' })
   @Column({ type: 'int', default: 0 })
   sortOrder: number;
 
-  @ApiPropertyOptional({ description: 'Chủ đề chuẩn trong ngân hàng topics (lọc chéo grammar/vocab)' })
-  @Column({ type: 'uuid', nullable: true })
-  canonicalTopicId?: string;
-
-  @ManyToOne(() => GrammarTopicEntity, topic => topic.children, {
+  @ManyToOne(() => GrammarTopicEntity, parent => parent.children, {
     onDelete: 'SET NULL',
     nullable: true,
   })
   @JoinColumn({ name: 'parentId' })
   parent?: GrammarTopicEntity;
 
-  @OneToMany(() => GrammarTopicEntity, topic => topic.parent)
+  @OneToMany(() => GrammarTopicEntity, child => child.parent)
   children?: GrammarTopicEntity[];
 
   @OneToMany(() => GrammarStructureEntity, structure => structure.grammarTopic)
   structures?: GrammarStructureEntity[];
-
-  @ManyToOne(() => TopicEntity, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({ name: 'canonicalTopicId' })
-  canonicalTopic?: TopicEntity;
 }

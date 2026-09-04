@@ -1,43 +1,43 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { PrimaryBaseEntity } from '../base.entity';
-import { QuestionVersionEntity } from '../question/question-version.entity';
-import { QuestionEntity } from '../question/question.entity';
 import { ArenaMatchAnswerEntity } from './arena-match-answer.entity';
 import { ArenaMatchEntity } from './arena-match.entity';
 
+/**
+ * Bảng `arena_match_questions` — câu hỏi được bốc vào trận, kèm bản chụp.
+ *
+ * Chỉ nhận version `APPROVED` và thuộc nhóm chấm tự động được
+ * (`SINGLE_CHOICE`, `MULTI_CHOICE`, `TRUE_FALSE_NG`, `FILL_BLANK`, `MATCHING`) —
+ * trận đấu real-time không chờ được người chấm.
+ */
 @Entity('arena_match_questions')
-@Index('idx_arena_match_questions_unique', ['matchId', 'sortOrder'], { unique: true })
-@Index('idx_arena_match_questions_match_id', ['matchId'])
+@Index('idx_arena_match_questions_match', ['arenaMatchId', 'sortOrder'])
 export class ArenaMatchQuestionEntity extends PrimaryBaseEntity {
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến trận đấu Arena' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến trận đấu' })
   @Column({ type: 'uuid' })
-  matchId: string;
+  arenaMatchId: string;
 
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến câu hỏi' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến câu hỏi gốc' })
   @Column({ type: 'uuid' })
   questionId: string;
 
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến phiên bản câu hỏi' })
-  @Column({ type: 'uuid' })
-  questionVersionId: string;
+  @ApiProperty({ description: 'Bản chụp nội dung câu hỏi kèm đáp án đúng' })
+  @Column({ type: 'jsonb' })
+  questionSnapshotJson: Record<string, unknown>;
 
-  @ApiProperty({ description: 'Thứ tự câu hỏi trong trận', default: 0 })
+  @ApiProperty({ description: 'Thứ tự câu trong trận' })
   @Column({ type: 'int', default: 0 })
   sortOrder: number;
 
-  @ManyToOne(() => ArenaMatchEntity, match => match.matchQuestions, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'matchId' })
-  match?: ArenaMatchEntity;
+  @ApiProperty({ description: 'Giới hạn thời gian cho câu này (giây)' })
+  @Column({ type: 'int', default: 30 })
+  timeLimitSeconds: number;
 
-  @ManyToOne(() => QuestionEntity, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'questionId' })
-  question?: QuestionEntity;
+  @ManyToOne(() => ArenaMatchEntity, match => match.questions, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'arenaMatchId' })
+  arenaMatch?: ArenaMatchEntity;
 
-  @ManyToOne(() => QuestionVersionEntity, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'questionVersionId' })
-  questionVersion?: QuestionVersionEntity;
-
-  @OneToMany(() => ArenaMatchAnswerEntity, ma => ma.arenaMatchQuestion)
+  @OneToMany(() => ArenaMatchAnswerEntity, answer => answer.arenaMatchQuestion)
   answers?: ArenaMatchAnswerEntity[];
 }

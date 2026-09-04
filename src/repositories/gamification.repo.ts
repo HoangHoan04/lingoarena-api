@@ -12,14 +12,14 @@ import { PrimaryRepo } from './primary.repo';
 @CustomRepository(UserGamificationStatEntity)
 export class UserGamificationStatRepo extends PrimaryRepo<UserGamificationStatEntity> {}
 
+@CustomRepository(PointLedgerEntryEntity)
+export class PointLedgerEntryRepo extends PrimaryRepo<PointLedgerEntryEntity> {}
+
 @CustomRepository(AchievementEntity)
 export class AchievementRepo extends PrimaryRepo<AchievementEntity> {}
 
 @CustomRepository(UserAchievementEntity)
 export class UserAchievementRepo extends PrimaryRepo<UserAchievementEntity> {}
-
-@CustomRepository(PointLedgerEntryEntity)
-export class PointLedgerEntryRepo extends PrimaryRepo<PointLedgerEntryEntity> {}
 
 @CustomRepository(DailyChallengeEntity)
 export class DailyChallengeRepo extends PrimaryRepo<DailyChallengeEntity> {}

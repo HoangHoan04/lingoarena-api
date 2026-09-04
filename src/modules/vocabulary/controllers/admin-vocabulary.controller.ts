@@ -1,15 +1,18 @@
 import { Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { CurrentUser, DefController, DefGet, DefPatch, DefPost, DefPut } from '~/common/core/decorator';
 import { JwtAuthGuard, PermissionGuard } from '~/common/guards';
-import { PaginationDto, UserDto } from '~/dto';
+import { PaginationDto, UserDto, ExcelImportBatchDto } from '~/dto';
 import {
   CreateDeckDto,
   CreateVocabularyDto,
   FilterDeckDto,
   FilterVocabularyDto,
   GenerateWordTtsDto,
+  ImportVocabularyDto,
   ReplaceDeckItemsDto,
+  SyncWordsAudioDto,
   UpdateDeckDto,
   UpdateVocabularyDto,
 } from '../dto';
@@ -50,6 +53,19 @@ export class AdminVocabularyController {
   @ApiOperation({ summary: 'Tạo audio UK/US từ headword (TTS)' })
   generateWordTts(@Body() dto: GenerateWordTtsDto, @CurrentUser() user: UserDto) {
     return this.service.generateWordTts(dto, user);
+  }
+
+  @DefPost('words/sync-audio')
+  @ApiOperation({ summary: 'Đồng bộ audio UK/US cho toàn bộ từ vựng trong hệ thống' })
+  syncAllWordsAudio(@Body() dto: SyncWordsAudioDto, @CurrentUser() user: UserDto) {
+    return this.service.syncAllWordsAudio(dto, user);
+  }
+
+  @SkipThrottle()
+  @DefPost('words/import')
+  @ApiOperation({ summary: 'Nhập Excel hàng loạt từ vựng (tối đa 500 dòng/lần)' })
+  importWords(@Body() dto: ImportVocabularyDto, @CurrentUser() user: UserDto) {
+    return this.service.importWords(dto, user);
   }
 
   @DefGet('words/:id')
@@ -102,6 +118,19 @@ export class AdminVocabularyController {
   @ApiOperation({ summary: 'Tạo bộ từ' })
   createDeck(@Body() dto: CreateDeckDto, @CurrentUser() user: UserDto) {
     return this.service.createDeck(dto, user);
+  }
+
+  @SkipThrottle()
+  @DefPost('decks/import')
+  @ApiOperation({ summary: 'Nhập Excel bộ thẻ' })
+  importDecks(@Body() dto: ExcelImportBatchDto, @CurrentUser() user: UserDto) {
+    return this.service.importDecks(dto, user);
+  }
+
+  @DefPost('decks/export-excel')
+  @ApiOperation({ summary: 'Xuất Excel bộ thẻ' })
+  exportDecks(@Body() body: PaginationDto<FilterDeckDto>) {
+    return this.service.exportDecks(body);
   }
 
   @DefPatch('decks/:id')

@@ -46,9 +46,28 @@ export class UserProfileEntity extends PrimaryBaseEntity {
   @Column({ type: 'text', nullable: true })
   bio?: string;
 
+  @ApiPropertyOptional({
+    enum: enumData.CEFR_LEVEL,
+    description: 'Trình độ hiện tại, hiển thị ở phòng luyện nói và bảng xếp hạng',
+  })
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  currentLevel?: string;
+
   @ApiPropertyOptional({ description: 'Thời điểm hoàn thành onboarding' })
   @Column({ type: 'timestamptz', nullable: true })
   onboardingCompletedAt?: Date;
+
+  @ApiPropertyOptional({
+    description: 'Tuỳ chọn nhận thông báo theo từng loại — thay bảng notification_preferences',
+  })
+  @Column({ type: 'jsonb', nullable: true })
+  notificationPrefsJson?: Record<string, unknown>;
+
+  @ApiPropertyOptional({
+    description: 'Tuỳ chọn giao diện phía customer (vd StudioSettings của trang luyện nghe)',
+  })
+  @Column({ type: 'jsonb', nullable: true })
+  preferencesJson?: Record<string, unknown>;
 
   @OneToOne(() => UserEntity, user => user.profile, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })

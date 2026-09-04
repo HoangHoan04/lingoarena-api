@@ -5,5 +5,3 @@ export * from './arena-match-question.entity';
 export * from './arena-match.entity';
 export * from './arena-queue-ticket.entity';
 export * from './arena-rating.entity';
-export * from './arena-season-standing.entity';
-export * from './arena-season.entity';

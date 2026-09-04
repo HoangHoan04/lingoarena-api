@@ -1,17 +1,28 @@
 import { Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CurrentUser, DefController, DefGet, DefPatch, DefPost, DefPut } from '~/common/core/decorator';
+import { SkipThrottle } from '@nestjs/throttler';
+import {
+  CurrentUser,
+  DefController,
+  DefGet,
+  DefPatch,
+  DefPost,
+  DefPut,
+} from '~/common/core/decorator';
 import { JwtAuthGuard, PermissionGuard } from '~/common/guards';
-import { PaginationDto, UserDto } from '~/dto';
+import { PaginationDto, UserDto, ExcelImportBatchDto } from '~/dto';
 import {
   CreateExamSectionDto,
   CreateExamSkillDto,
+  CreateExamStructureDto,
   CreateExamTypeDto,
   FilterExamSectionDto,
   FilterExamSkillDto,
+  FilterExamStructureDto,
   FilterExamTypeDto,
   UpdateExamSectionDto,
   UpdateExamSkillDto,
+  UpdateExamStructureDto,
   UpdateExamTypeDto,
 } from '../dto';
 import { ExamService } from '../service/exam.service';
@@ -41,6 +52,55 @@ export class AdminExamController {
     return this.service.selectBoxSections(examSkillId);
   }
 
+  @DefPost('structures/pagination')
+  @ApiOperation({ summary: 'Phân trang cấu trúc kỳ thi' })
+  paginationStructures(@Body() body: PaginationDto<FilterExamStructureDto>) {
+    return this.service.paginationStructures(body);
+  }
+
+  @DefPost('structures')
+  @ApiOperation({ summary: 'Tạo node cấu trúc kỳ thi' })
+  createStructure(@Body() dto: CreateExamStructureDto, @CurrentUser() user: UserDto) {
+    return this.service.createStructure(dto, user);
+  }
+
+  @SkipThrottle()
+  @DefPost('structures/import')
+  @ApiOperation({ summary: 'Nhập Excel cấu trúc kỳ thi' })
+  importStructures(@Body() dto: ExcelImportBatchDto, @CurrentUser() user: UserDto) {
+    return this.service.importStructures(dto, user);
+  }
+
+  @DefPost('structures/export-excel')
+  @ApiOperation({ summary: 'Xuất Excel cấu trúc kỳ thi' })
+  exportStructures(@Body() body: PaginationDto<FilterExamStructureDto>) {
+    return this.service.exportStructures(body);
+  }
+
+  @DefPut('structures/deactivate/:id')
+  deactivateStructure(@Param('id') id: string, @CurrentUser() user: UserDto) {
+    return this.service.deactivateStructure(id, user);
+  }
+
+  @DefPut('structures/activate/:id')
+  activateStructure(@Param('id') id: string, @CurrentUser() user: UserDto) {
+    return this.service.activateStructure(id, user);
+  }
+
+  @DefGet('structures/:id')
+  findStructure(@Param('id') id: string) {
+    return this.service.findStructure(id);
+  }
+
+  @DefPatch('structures/:id')
+  updateStructure(
+    @Param('id') id: string,
+    @Body() dto: UpdateExamStructureDto,
+    @CurrentUser() user: UserDto,
+  ) {
+    return this.service.updateStructure(id, dto, user);
+  }
+
   @DefPost('types/pagination')
   @ApiOperation({ summary: 'Phân trang loại kỳ thi' })
   paginationTypes(@Body() body: PaginationDto<FilterExamTypeDto>) {
@@ -59,6 +119,19 @@ export class AdminExamController {
     return this.service.createType(dto, user);
   }
 
+  @SkipThrottle()
+  @DefPost('types/import')
+  @ApiOperation({ summary: 'Nhập Excel loại kỳ thi' })
+  importTypes(@Body() dto: ExcelImportBatchDto, @CurrentUser() user: UserDto) {
+    return this.service.importTypes(dto, user);
+  }
+
+  @DefPost('types/export-excel')
+  @ApiOperation({ summary: 'Xuất Excel loại kỳ thi' })
+  exportTypes(@Body() body: PaginationDto<FilterExamTypeDto>) {
+    return this.service.exportTypes(body);
+  }
+
   @DefPut('types/deactivate/:id')
   @ApiOperation({ summary: 'Ngưng loại kỳ thi' })
   deactivateType(@Param('id') id: string, @CurrentUser() user: UserDto) {
@@ -71,6 +144,12 @@ export class AdminExamController {
     return this.service.activateType(id, user);
   }
 
+  @DefGet('types/:id/tree')
+  @ApiOperation({ summary: 'Cây kỹ năng / phần thi / số đề của loại kỳ thi' })
+  findTypeTree(@Param('id') id: string) {
+    return this.service.findTypeTree(id);
+  }
+
   @DefGet('types/:id')
   @ApiOperation({ summary: 'Chi tiết loại kỳ thi' })
   findType(@Param('id') id: string) {
@@ -79,7 +158,11 @@ export class AdminExamController {
 
   @DefPatch('types/:id')
   @ApiOperation({ summary: 'Cập nhật loại kỳ thi' })
-  updateType(@Param('id') id: string, @Body() dto: UpdateExamTypeDto, @CurrentUser() user: UserDto) {
+  updateType(
+    @Param('id') id: string,
+    @Body() dto: UpdateExamTypeDto,
+    @CurrentUser() user: UserDto,
+  ) {
     return this.service.updateType(id, dto, user);
   }
 
@@ -121,7 +204,11 @@ export class AdminExamController {
 
   @DefPatch('skills/:id')
   @ApiOperation({ summary: 'Cập nhật kỹ năng kỳ thi' })
-  updateSkill(@Param('id') id: string, @Body() dto: UpdateExamSkillDto, @CurrentUser() user: UserDto) {
+  updateSkill(
+    @Param('id') id: string,
+    @Body() dto: UpdateExamSkillDto,
+    @CurrentUser() user: UserDto,
+  ) {
     return this.service.updateSkill(id, dto, user);
   }
 
@@ -163,7 +250,11 @@ export class AdminExamController {
 
   @DefPatch('sections/:id')
   @ApiOperation({ summary: 'Cập nhật phần thi' })
-  updateSection(@Param('id') id: string, @Body() dto: UpdateExamSectionDto, @CurrentUser() user: UserDto) {
+  updateSection(
+    @Param('id') id: string,
+    @Body() dto: UpdateExamSectionDto,
+    @CurrentUser() user: UserDto,
+  ) {
     return this.service.updateSection(id, dto, user);
   }
 }

@@ -1,6 +1,6 @@
 import { MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ChildModule } from '~/common/core/decorator';
-import { SupportTicketRepo, SupportTicketMessageRepo, ContactSubmissionRepo } from '~/repositories';
+import { SupportTicketMessageRepo, SupportTicketRepo, UserRepo } from '~/repositories';
 import { TypeOrmExModule } from '~/typeorm';
 import { ActionLogModule } from '../action-log';
 import { SupportService } from './service';
@@ -9,7 +9,11 @@ import { SupportService } from './service';
   providers: [SupportService],
   controllers: [],
   imports: [
-    TypeOrmExModule.forCustomRepository([SupportTicketRepo, SupportTicketMessageRepo, ContactSubmissionRepo]),
+    TypeOrmExModule.forCustomRepository([
+      SupportTicketRepo,
+      SupportTicketMessageRepo,
+      UserRepo,
+    ]),
     ActionLogModule,
   ],
   exports: [SupportService],

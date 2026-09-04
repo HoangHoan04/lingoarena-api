@@ -50,6 +50,7 @@ export class PermissionGuard implements CanActivate {
         id: true,
         code: true,
         name: true,
+        permissionCodes: true,
       },
     });
 

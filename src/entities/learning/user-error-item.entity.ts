@@ -1,70 +1,72 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index } from 'typeorm';
 import { enumData } from '~/common/enums/base.enum';
-import { AttemptAnswerEntity } from '../assessment/attempt-answer.entity';
-import { UserEntity } from '../auth/user.entity';
 import { PrimaryBaseEntity } from '../base.entity';
-import { QuestionEntity } from '../question/question.entity';
 
+/**
+ * Bảng `user_error_items` — sổ tay lỗi của người học, nguồn cho tính năng ôn lỗi.
+ *
+ * `sourceType` + `sourceId` trỏ về nơi phát sinh lỗi (attempt answer, session
+ * item, answer evaluation) để người học bấm vào xem lại ngữ cảnh.
+ */
 @Entity('user_error_items')
-@Index('idx_user_error_items_user_question', ['userId', 'questionId'], { unique: true })
-@Index('idx_user_error_items_user_id', ['userId'])
-@Index('idx_user_error_items_is_resolved', ['isResolved'])
-@Index('idx_user_error_items_next_review', ['nextReviewAt'])
+@Index('idx_user_error_items_user', ['userId'])
+@Index('idx_user_error_items_unresolved', ['userId', 'isResolved'])
+@Index('idx_user_error_items_error_type', ['userId', 'errorType'])
 export class UserErrorItemEntity extends PrimaryBaseEntity {
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người dùng' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người học' })
   @Column({ type: 'uuid' })
   userId: string;
 
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến câu hỏi' })
-  @Column({ type: 'uuid' })
-  questionId: string;
-
-  @ApiPropertyOptional({ description: 'Khóa ngoại tham chiếu đến câu trả lời' })
-  @Column({ type: 'uuid', nullable: true })
-  attemptAnswerId?: string;
-
-  @ApiProperty({
-    enum: enumData.ERROR_TYPE,
-    default: enumData.ERROR_TYPE.GRAMMAR.code,
-    description: 'Loại lỗi sai',
-  })
-  @Column({ type: 'varchar', length: 50, default: enumData.ERROR_TYPE.GRAMMAR.code })
+  @ApiProperty({ enum: enumData.ERROR_TYPE, description: 'Loại lỗi' })
+  @Column({ type: 'varchar', length: 30 })
   errorType: string;
 
-  @ApiPropertyOptional({ description: 'Lý do mắc lỗi' })
-  @Column({ type: 'text', nullable: true })
-  errorReason?: string;
+  @ApiPropertyOptional({ description: 'Loại nguồn phát sinh lỗi' })
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  sourceType?: string;
 
-  @ApiPropertyOptional({ description: 'Ghi chú cá nhân của người học' })
-  @Column({ type: 'text', nullable: true })
-  userNote?: string;
+  @ApiPropertyOptional({ description: 'ID nguồn tương ứng với sourceType' })
+  @Column({ type: 'uuid', nullable: true })
+  sourceId?: string;
 
-  @ApiProperty({ description: 'Cờ đã khắc phục lỗi', default: false })
+  @ApiPropertyOptional({ description: 'Câu hỏi liên quan' })
+  @Column({ type: 'uuid', nullable: true })
+  questionId?: string;
+
+  @ApiPropertyOptional({ description: 'Cấu trúc ngữ pháp liên quan' })
+  @Column({ type: 'uuid', nullable: true })
+  grammarStructureId?: string;
+
+  @ApiPropertyOptional({ description: 'Từ vựng liên quan' })
+  @Column({ type: 'uuid', nullable: true })
+  vocabularyId?: string;
+
+  @ApiProperty({ description: 'Mô tả lỗi' })
+  @Column({ type: 'text' })
+  description: string;
+
+  @ApiPropertyOptional({ description: 'Đoạn văn bản người học viết sai' })
+  @Column({ type: 'text', nullable: true })
+  wrongText?: string;
+
+  @ApiPropertyOptional({ description: 'Bản sửa đúng' })
+  @Column({ type: 'text', nullable: true })
+  correctedText?: string;
+
+  @ApiProperty({ description: 'Số lần lặp lại cùng lỗi' })
+  @Column({ type: 'int', default: 1 })
+  occurrenceCount: number;
+
+  @ApiProperty({ description: 'Đã khắc phục hay chưa' })
   @Column({ type: 'boolean', default: false })
   isResolved: boolean;
 
-  @ApiProperty({ description: 'Số lần làm sai câu này', default: 1 })
-  @Column({ type: 'int', default: 1 })
-  wrongCount: number;
-
-  @ApiProperty({ description: 'Thời điểm làm sai gần nhất' })
+  @ApiProperty({ description: 'Thời điểm gặp lỗi gần nhất' })
   @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
-  lastWrongAt: Date;
+  lastOccurredAt: Date;
 
-  @ApiPropertyOptional({ description: 'Thời điểm ôn tập lại lỗi tiếp theo' })
+  @ApiPropertyOptional({ description: 'Thời điểm đánh dấu đã khắc phục' })
   @Column({ type: 'timestamptz', nullable: true })
-  nextReviewAt?: Date;
-
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user?: UserEntity;
-
-  @ManyToOne(() => QuestionEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'questionId' })
-  question?: QuestionEntity;
-
-  @ManyToOne(() => AttemptAnswerEntity, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({ name: 'attemptAnswerId' })
-  attemptAnswer?: AttemptAnswerEntity;
+  resolvedAt?: Date;
 }

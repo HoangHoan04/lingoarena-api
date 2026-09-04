@@ -85,6 +85,13 @@ export class UserRegisterDto {
   sendMethod?: string;
 }
 
+export class LogoutDto {
+  @ApiPropertyOptional({ description: 'Refresh Token cần thu hồi (nếu bỏ trống sẽ thu hồi mọi phiên)' })
+  @IsOptional()
+  @IsString()
+  refreshToken?: string;
+}
+
 export class RefreshTokenDto {
   @ApiProperty({ description: 'Refresh Token' })
   @IsNotEmpty({ message: 'Refresh token không được để trống' })

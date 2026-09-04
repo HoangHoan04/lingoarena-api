@@ -1,22 +1,10 @@
-import { enumData } from '~/common/enums/base.enum';
 import { UserEntity, UserProfileEntity } from '~/entities';
-
-export const STAFF_ROLE_CODES = [
-  enumData.USER_ROLE.SUPER_ADMIN.code,
-  enumData.USER_ROLE.ADMIN.code,
-  enumData.USER_ROLE.STAFF.code,
-  enumData.USER_ROLE.MANAGER.code,
-  enumData.USER_ROLE.TEACHER.code,
-] as const;
-
-export const DEFAULT_CUSTOMER_ROLE = enumData.USER_ROLE.STUDENT.code;
 
 export type PublicAuthUser = {
   id: string;
   email: string;
   phone: string | null;
   username: string | null;
-  status: string;
   roles: string[];
   role: string | null;
   fullName: string | null;
@@ -25,15 +13,12 @@ export type PublicAuthUser = {
   avatarUrl: string | null;
   emailVerifiedAt: Date | null;
   lastLoginAt: Date | null;
+  createdAt?: Date | null;
   preferredLanguage?: string;
   timezone?: string;
   profile: UserProfileEntity | null;
   permissions?: string[];
 };
-
-export function hasStaffAccess(roles: Array<string | undefined | null> = []): boolean {
-  return roles.some(role => !!role && STAFF_ROLE_CODES.includes(role as (typeof STAFF_ROLE_CODES)[number]));
-}
 
 export function normalizeLoginIdentifier(raw: string): string {
   return (raw || '').trim();
@@ -51,13 +36,7 @@ export function resolveDisplayName(
   profile?: Pick<UserProfileEntity, 'displayName' | 'fullName'> | null,
   user?: Pick<UserEntity, 'username' | 'email'> | null,
 ): string {
-  return (
-    profile?.displayName ||
-    profile?.fullName ||
-    user?.username ||
-    user?.email ||
-    ''
-  );
+  return profile?.displayName || profile?.fullName || user?.username || user?.email || '';
 }
 
 export function buildPublicUser(
@@ -72,7 +51,6 @@ export function buildPublicUser(
     email: user.email,
     phone: user.phone || null,
     username: user.username || null,
-    status: user.status,
     roles,
     role: roles[0] || null,
     fullName: profile?.fullName || null,
@@ -81,6 +59,7 @@ export function buildPublicUser(
     avatarUrl: profile?.avatarUrl || null,
     emailVerifiedAt: user.emailVerifiedAt || null,
     lastLoginAt: user.lastLoginAt || null,
+    createdAt: user.createdAt || null,
     preferredLanguage: user.preferredLanguage || 'vi',
     timezone: user.timezone || 'Asia/Ho_Chi_Minh',
     profile: profile || null,

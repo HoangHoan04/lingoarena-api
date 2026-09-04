@@ -1,8 +1,9 @@
 import { Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { CurrentUser, DefController, DefGet, DefPatch, DefPost, DefPut } from '~/common/core/decorator';
 import { JwtAuthGuard, PermissionGuard } from '~/common/guards';
-import { PaginationDto, UserDto } from '~/dto';
+import { PaginationDto, UserDto, ExcelImportBatchDto } from '~/dto';
 import {
   CreateQuestionDto,
   CreateQuestionGroupDto,
@@ -14,7 +15,6 @@ import {
   FilterQuestionTypeDto,
   FilterTagDto,
   FilterTopicDto,
-  ReviewQuestionDto,
   UpdateQuestionDto,
   UpdateQuestionGroupDto,
   UpdateQuestionTypeDto,
@@ -132,6 +132,19 @@ export class AdminQuestionController {
     return this.service.createTopic(dto, user);
   }
 
+  @SkipThrottle()
+  @DefPost('topics/import')
+  @ApiOperation({ summary: 'Nhập Excel chủ đề' })
+  importTopics(@Body() dto: ExcelImportBatchDto, @CurrentUser() user: UserDto) {
+    return this.service.importTopics(dto, user);
+  }
+
+  @DefPost('topics/export-excel')
+  @ApiOperation({ summary: 'Xuất Excel chủ đề' })
+  exportTopics(@Body() body: PaginationDto<FilterTopicDto>) {
+    return this.service.exportTopics(body);
+  }
+
   @DefPut('topics/deactivate/:id')
   @ApiOperation({ summary: 'Ngưng chủ đề' })
   deactivateTopic(@Param('id') id: string, @CurrentUser() user: UserDto) {
@@ -174,6 +187,19 @@ export class AdminQuestionController {
     return this.service.createTag(dto, user);
   }
 
+  @SkipThrottle()
+  @DefPost('tags/import')
+  @ApiOperation({ summary: 'Nhập Excel thẻ' })
+  importTags(@Body() dto: ExcelImportBatchDto, @CurrentUser() user: UserDto) {
+    return this.service.importTags(dto, user);
+  }
+
+  @DefPost('tags/export-excel')
+  @ApiOperation({ summary: 'Xuất Excel thẻ' })
+  exportTags(@Body() body: PaginationDto<FilterTagDto>) {
+    return this.service.exportTags(body);
+  }
+
   @DefPut('tags/deactivate/:id')
   @ApiOperation({ summary: 'Ngưng thẻ' })
   deactivateTag(@Param('id') id: string, @CurrentUser() user: UserDto) {
@@ -210,6 +236,19 @@ export class AdminQuestionController {
     return this.service.createGroup(dto, user);
   }
 
+  @SkipThrottle()
+  @DefPost('groups/import')
+  @ApiOperation({ summary: 'Nhập Excel bài đọc / nghe' })
+  importGroups(@Body() dto: ExcelImportBatchDto, @CurrentUser() user: UserDto) {
+    return this.service.importGroups(dto, user);
+  }
+
+  @DefPost('groups/export-excel')
+  @ApiOperation({ summary: 'Xuất Excel bài đọc / nghe' })
+  exportGroups(@Body() body: PaginationDto<FilterQuestionGroupDto>) {
+    return this.service.exportGroups(body);
+  }
+
   @DefPut('groups/deactivate/:id')
   @ApiOperation({ summary: 'Ngưng nhóm câu hỏi' })
   deactivateGroup(@Param('id') id: string, @CurrentUser() user: UserDto) {
@@ -220,6 +259,18 @@ export class AdminQuestionController {
   @ApiOperation({ summary: 'Kích hoạt nhóm câu hỏi' })
   activateGroup(@Param('id') id: string, @CurrentUser() user: UserDto) {
     return this.service.activateGroup(id, user);
+  }
+
+  @DefGet('groups/youtube-transcript/:youtubeId')
+  @ApiOperation({ summary: 'Lấy phụ đề có mốc thời gian từ YouTube' })
+  getYoutubeTranscript(@Param('youtubeId') youtubeId: string) {
+    return this.service.getYoutubeTranscript(youtubeId);
+  }
+
+  @DefPost('groups/translate-segments')
+  @ApiOperation({ summary: 'Dịch tự động danh sách câu sang tiếng Việt' })
+  translateSegments(@Body() body: { texts: string[] }) {
+    return this.service.translateSegments(body?.texts || []);
   }
 
   @DefGet('groups/:id')
@@ -250,40 +301,11 @@ export class AdminQuestionController {
     return this.service.createQuestion(dto, user);
   }
 
-  @DefPut('questions/submit/:id')
-  @ApiOperation({ summary: 'Nộp duyệt câu hỏi' })
-  submitQuestion(@Param('id') id: string, @CurrentUser() user: UserDto) {
-    return this.service.submitQuestion(id, user);
-  }
-
-  @DefPut('questions/approve/:id')
-  @ApiOperation({ summary: 'Duyệt câu hỏi' })
-  approveQuestion(
-    @Param('id') id: string,
-    @Body() dto: ReviewQuestionDto,
-    @CurrentUser() user: UserDto,
-  ) {
-    return this.service.approveQuestion(id, user, dto);
-  }
-
-  @DefPut('questions/reject/:id')
-  @ApiOperation({ summary: 'Từ chối câu hỏi' })
-  rejectQuestion(
-    @Param('id') id: string,
-    @Body() dto: ReviewQuestionDto,
-    @CurrentUser() user: UserDto,
-  ) {
-    return this.service.rejectQuestion(id, user, dto);
-  }
-
-  @DefPut('questions/request-changes/:id')
-  @ApiOperation({ summary: 'Yêu cầu chỉnh sửa câu hỏi' })
-  requestChangesQuestion(
-    @Param('id') id: string,
-    @Body() dto: ReviewQuestionDto,
-    @CurrentUser() user: UserDto,
-  ) {
-    return this.service.requestChangesQuestion(id, user, dto);
+  @SkipThrottle()
+  @DefPost('questions/import')
+  @ApiOperation({ summary: 'Nhập Excel câu hỏi' })
+  importQuestions(@Body() dto: ExcelImportBatchDto, @CurrentUser() user: UserDto) {
+    return this.service.importQuestions(dto, user);
   }
 
   @DefPut('questions/deactivate/:id')
@@ -296,6 +318,12 @@ export class AdminQuestionController {
   @ApiOperation({ summary: 'Kích hoạt câu hỏi' })
   activateQuestion(@Param('id') id: string, @CurrentUser() user: UserDto) {
     return this.service.activateQuestion(id, user);
+  }
+
+  @DefPost('questions/export-excel')
+  @ApiOperation({ summary: 'Xuất danh sách câu hỏi' })
+  exportQuestions(@Body() body: PaginationDto<FilterQuestionDto>) {
+    return this.service.exportQuestions(body);
   }
 
   @DefGet('questions/:id')
@@ -313,4 +341,11 @@ export class AdminQuestionController {
   ) {
     return this.service.updateQuestion(id, dto, user);
   }
+
+  @DefPut('questions/:id/detach-group')
+  @ApiOperation({ summary: 'Gỡ câu hỏi khỏi nhóm / bài đọc' })
+  detachQuestionFromGroup(@Param('id') id: string, @CurrentUser() user: UserDto) {
+    return this.service.detachQuestionFromGroup(id, user);
+  }
 }
+

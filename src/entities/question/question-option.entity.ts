@@ -1,37 +1,40 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { PrimaryBaseEntity } from '../base.entity';
-import { QuestionVersionEntity } from './question-version.entity';
+import { QuestionEntity } from './question.entity';
 
+/** Bảng `question_options` — đáp án lựa chọn của câu hỏi. */
 @Entity('question_options')
-@Index('idx_question_options_ver_key', ['questionVersionId', 'optionKey'], { unique: true })
-@Index('idx_question_options_version_id', ['questionVersionId'])
+@Index('uq_question_options_question_key', ['questionId', 'optionKey'], {
+  unique: true,
+  where: '"isDeleted" = false',
+})
 export class QuestionOptionEntity extends PrimaryBaseEntity {
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến phiên bản câu hỏi' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến câu hỏi' })
   @Column({ type: 'uuid' })
-  questionVersionId: string;
+  questionId: string;
 
-  @ApiProperty({ description: 'Ký tự lựa chọn (A, B, C, D hoặc 1, 2, 3)' })
+  @ApiProperty({ description: 'Khóa lựa chọn (A, B, C, D)' })
   @Column({ type: 'varchar', length: 10 })
   optionKey: string;
 
-  @ApiProperty({ description: 'Nội dung phương án' })
+  @ApiProperty({ description: 'Nội dung lựa chọn' })
   @Column({ type: 'text' })
   content: string;
 
-  @ApiProperty({ description: 'Cờ đáp án đúng', default: false })
+  @ApiProperty({ description: 'Đây có phải đáp án đúng' })
   @Column({ type: 'boolean', default: false })
   isCorrect: boolean;
 
-  @ApiPropertyOptional({ description: 'Giải thích / phản hồi cho lựa chọn này' })
+  @ApiPropertyOptional({ description: 'Phản hồi khi người học chọn lựa chọn này' })
   @Column({ type: 'text', nullable: true })
   feedback?: string;
 
-  @ApiProperty({ description: 'Thứ tự sắp xếp', default: 0 })
+  @ApiProperty({ description: 'Thứ tự hiển thị' })
   @Column({ type: 'int', default: 0 })
   sortOrder: number;
 
-  @ManyToOne(() => QuestionVersionEntity, qv => qv.options, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'questionVersionId' })
-  questionVersion?: QuestionVersionEntity;
+  @ManyToOne(() => QuestionEntity, question => question.options, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'questionId' })
+  question?: QuestionEntity;
 }

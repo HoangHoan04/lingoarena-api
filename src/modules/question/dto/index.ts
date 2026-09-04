@@ -28,6 +28,12 @@ export class CreateQuestionTypeDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  nameEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsObject()
   answerSchema?: Record<string, unknown>;
 
@@ -66,13 +72,30 @@ export class CreateTopicDto {
   @ApiProperty({ example: 'Business' })
   @IsNotEmpty()
   @IsString()
-  @MaxLength(100)
+  @MaxLength(200)
   name: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(200)
+  nameEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  slug?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   description?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  descriptionEn?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -113,8 +136,26 @@ export class CreateTagDto {
   @ApiProperty({ example: 'grammar' })
   @IsNotEmpty()
   @IsString()
-  @MaxLength(50)
+  @MaxLength(200)
   name: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  nameEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  code?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  slug?: string;
 }
 
 export class UpdateTagDto extends CreateTagDto {}
@@ -130,7 +171,68 @@ export class FilterTagDto {
   isDeleted?: boolean;
 }
 
+export class ContentSegmentInputDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @Type(() => Number)
+  @IsNumber()
+  sortOrder: number;
+
+  @ApiPropertyOptional({ example: 'Paragraph A' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  label?: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  text: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  translationVi?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  explanation?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  startSec?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  endSec?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  keyVocabJson?: Record<string, unknown>[];
+}
+
 export class CreateQuestionGroupDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  examTypeId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  examStructureId?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()
@@ -144,7 +246,17 @@ export class CreateQuestionGroupDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  titleEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   instructions?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  instructionsEn?: string;
 
   @ApiPropertyOptional({ example: 'passage' })
   @IsOptional()
@@ -158,6 +270,69 @@ export class CreateQuestionGroupDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
+  summaryVi?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  wordCount?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  recommendedTimeMin?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  cefrLevel?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  coverImageUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  audioUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  youtubeId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  channelName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  channelAvatarUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  thumbnailUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  durationSec?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  keyVocabJson?: Record<string, unknown>[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsUUID()
   audioAssetId?: string;
 
@@ -165,11 +340,6 @@ export class CreateQuestionGroupDto {
   @IsOptional()
   @IsUUID()
   imageAssetId?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  audioUrl?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -186,10 +356,12 @@ export class CreateQuestionGroupDto {
   @IsObject()
   metadata?: Record<string, unknown>;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: [ContentSegmentInputDto] })
   @IsOptional()
-  @IsString()
-  status?: string;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ContentSegmentInputDto)
+  segments?: ContentSegmentInputDto[];
 }
 
 export class UpdateQuestionGroupDto extends CreateQuestionGroupDto {}
@@ -203,12 +375,36 @@ export class FilterQuestionGroupDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  examTypeId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  examStructureId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   examSectionId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  status?: string;
+  stimulusType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  cefrLevel?: string;
+
+  @ApiPropertyOptional({ description: 'Lọc nhóm có câu hỏi gắn chủ đề (taxonomy) này' })
+  @IsOptional()
+  @IsString()
+  topicId?: string;
+
+  @ApiPropertyOptional({ description: 'Lọc bài luyện nghe (có audio hoặc video)' })
+  @IsOptional()
+  hasAudio?: boolean;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -239,6 +435,11 @@ export class QuestionOptionInputDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
+  feedbackEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
   sortOrder?: number;
@@ -255,20 +456,36 @@ export class CreateQuestionDto {
   @IsUUID()
   examTypeId: string;
 
-  @ApiProperty()
-  @IsNotEmpty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsUUID()
-  examSkillId: string;
+  examStructureId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  examSkillId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()
   examSectionId?: string;
 
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsUUID()
-  questionTypeId: string;
+  @ApiPropertyOptional({ example: 'SINGLE_CHOICE' })
+  @IsOptional()
+  @IsString()
+  questionType?: string;
+
+  @ApiPropertyOptional({ example: 'SINGLE_CHOICE' })
+  @IsOptional()
+  @IsString()
+  questionTypeId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  questionNumber?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -290,7 +507,30 @@ export class CreateQuestionDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  status?: string;
+  gradingStrategy?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  rubricId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  minWords?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  maxWords?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  timeLimitMin?: number;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -305,7 +545,32 @@ export class CreateQuestionDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  instructionsEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   explanation?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  explanationEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  sampleAnswer?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  sampleBand?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  sampleAnalysisVi?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -321,6 +586,11 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsObject()
   gradingConfigJson?: Record<string, unknown>;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObject()
+  metaJson?: Record<string, unknown>;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -376,12 +646,22 @@ export class FilterQuestionDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  examStructureId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   examSkillId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   examSectionId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  questionType?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -411,11 +691,6 @@ export class FilterQuestionDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  status?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
   isDeleted?: boolean;
 }
 
@@ -435,6 +710,11 @@ export class StartPracticeDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()
+  examStructureId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
   examSkillId?: string;
 
   @ApiPropertyOptional()
@@ -444,7 +724,12 @@ export class StartPracticeDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  questionType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   questionTypeId?: string;
 
   @ApiPropertyOptional()
@@ -478,11 +763,13 @@ export class GradePracticeDto {
 
   @ApiProperty()
   @IsNotEmpty()
-  @IsUUID()
-  questionVersionId: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
   @IsObject()
   answerJson: Record<string, unknown>;
+}
+
+export class StartGroupSessionDto {
+  @ApiPropertyOptional({ example: 'READING', description: 'READING hoặc DICTATION. Bỏ trống thì suy ra từ stimulusType.' })
+  @IsOptional()
+  @IsString()
+  sessionType?: string;
 }

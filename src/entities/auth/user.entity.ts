@@ -2,12 +2,8 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { compare, hash } from 'bcrypt';
 import { BeforeInsert, BeforeUpdate, Column, Entity, Index, OneToMany, OneToOne } from 'typeorm';
 import { PWD_SALT_ROUNDS } from '~/common/constants';
-import { enumData } from '~/common/enums/base.enum';
 import { PrimaryBaseEntity } from '../base.entity';
 import { OauthAccountEntity } from './oauth-account.entity';
-import { OrganizationMemberEntity } from './organization-member.entity';
-import { RefreshTokenEntity } from './refresh-token.entity';
-import { UserDeviceEntity } from './user-device.entity';
 import { UserProfileEntity } from './user-profile.entity';
 import { UserRoleEntity } from './user-role.entity';
 import { UserSessionEntity } from './user-session.entity';
@@ -20,7 +16,7 @@ import { VerificationCodeEntity } from './verification-code.entity';
   unique: true,
   where: '"username" IS NOT NULL AND "isDeleted" = false',
 })
-@Index('idx_users_status', ['status'])
+@Index('idx_users_is_deleted', ['isDeleted'])
 @Index('idx_users_created_at', ['createdAt'])
 export class UserEntity extends PrimaryBaseEntity {
   @ApiProperty({ description: 'Địa chỉ email của người dùng' })
@@ -39,13 +35,9 @@ export class UserEntity extends PrimaryBaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   passwordHash?: string;
 
-  @ApiProperty({
-    enum: enumData.USER_STATUS,
-    default: enumData.USER_STATUS.PENDING.code,
-    description: 'Trạng thái hiện tại của bản ghi',
-  })
-  @Column({ type: 'varchar', length: 20, default: enumData.USER_STATUS.PENDING.code })
-  status: string;
+  @ApiProperty({ description: 'Người dùng này có phải admin hệ thống' })
+  @Column({ type: 'boolean', default: false })
+  isAdmin: boolean;
 
   @ApiPropertyOptional({ description: 'Thời điểm email verified' })
   @Column({ type: 'timestamptz', nullable: true })
@@ -79,17 +71,8 @@ export class UserEntity extends PrimaryBaseEntity {
   @OneToMany(() => UserSessionEntity, session => session.user)
   sessions?: UserSessionEntity[];
 
-  @OneToMany(() => RefreshTokenEntity, token => token.user)
-  refreshTokens?: RefreshTokenEntity[];
-
-  @OneToMany(() => OauthAccountEntity, oauth => oauth.user)
+  @OneToMany(() => OauthAccountEntity, account => account.user)
   oauthAccounts?: OauthAccountEntity[];
-
-  @OneToMany(() => UserDeviceEntity, device => device.user)
-  devices?: UserDeviceEntity[];
-
-  @OneToMany(() => OrganizationMemberEntity, member => member.user)
-  organizationMemberships?: OrganizationMemberEntity[];
 
   @OneToMany(() => VerificationCodeEntity, vc => vc.user)
   verificationCodes?: VerificationCodeEntity[];

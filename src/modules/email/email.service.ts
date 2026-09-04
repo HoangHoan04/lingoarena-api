@@ -38,12 +38,26 @@ export class EmailService {
   /** Gửi email xác thực đăng ký tài khoản */
   public async sendEmailVerify(data: { email: string; otpCode: string }) {
     const mailOptions = {
-      from: this.senderAddress,
+      from: `"LingoArena" <${this.senderAddress}>`,
       to: data.email,
-      subject: 'Xác minh đăng ký tài khoản',
-      html: ``,
+      subject: '[LingoArena] Mã xác thực đăng ký tài khoản',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+          <h2 style="color: #2b417e; text-align: center;">Xác minh tài khoản LingoArena</h2>
+          <p>Chào bạn,</p>
+          <p>Mã OTP xác thực email <strong>${data.email}</strong>:</p>
+          <div style="text-align: center; margin: 24px 0;">
+            <span style="font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #2b417e; background: #f0f4fc; padding: 10px 20px; border-radius: 8px; border: 1px solid #cbd5e1;">${data.otpCode}</span>
+          </div>
+          <p style="font-size: 12px; color: #64748b;">Mã OTP có hiệu lực trong <strong>5 phút</strong>. Không chia sẻ mã này.</p>
+        </div>
+      `,
     };
-    await this.transporter.sendMail(mailOptions);
+    try {
+      await this.sendMailQueued(mailOptions);
+    } catch (err) {
+      console.warn('Could not send verify OTP email via SMTP:', err);
+    }
     return true;
   }
 

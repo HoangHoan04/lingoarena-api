@@ -19,7 +19,7 @@ export class UserAssessmentController {
   @UseGuards(JwtOptionalGuard)
   @DefPost('pagination')
   pagination(@Body() body: PaginationDto<FilterAssessmentDto>) {
-    return this.service.pagination(body, true);
+    return this.service.pagination(body);
   }
 
   @UseGuards(JwtOptionalGuard)
@@ -70,5 +70,11 @@ export class UserAssessmentController {
   @DefGet('attempts/:id/result')
   result(@Param('id') id: string, @CurrentUser() user: UserDto) {
     return this.service.getResult(id, user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @DefPost('grading-tasks/:id/run')
+  runGradingTask(@Param('id') id: string, @CurrentUser() user: UserDto) {
+    return this.service.runGradingTask(id, user, true);
   }
 }

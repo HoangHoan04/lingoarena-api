@@ -1,50 +1,36 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
-import { UserEntity } from '../auth/user.entity';
 import { PrimaryBaseEntity } from '../base.entity';
 import { DailyChallengeEntity } from './daily-challenge.entity';
 
+/** Bảng `user_daily_challenge_progress` — tiến độ của người học với thử thách ngày. */
 @Entity('user_daily_challenge_progress')
-@Index('uq_user_daily_challenge_date', ['userId', 'dailyChallengeId', 'activityDate'], {
+@Index('uq_user_daily_challenge_progress_link', ['userId', 'dailyChallengeId'], {
   unique: true,
+  where: '"isDeleted" = false',
 })
-@Index('idx_user_daily_challenge_user_date', ['userId', 'activityDate'])
 export class UserDailyChallengeProgressEntity extends PrimaryBaseEntity {
-  @ApiProperty({ description: 'Khóa ngoại người dùng' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người dùng' })
   @Column({ type: 'uuid' })
   userId: string;
 
-  @ApiProperty({ description: 'Khóa ngoại thử thách' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến thử thách ngày' })
   @Column({ type: 'uuid' })
   dailyChallengeId: string;
 
-  @ApiProperty({ description: 'Ngày thử thách' })
-  @Column({ type: 'date' })
-  activityDate: Date | string;
-
-  @ApiProperty({ description: 'Tiến độ hiện tại', default: 0 })
+  @ApiProperty({ description: 'Số lượng đã đạt' })
   @Column({ type: 'int', default: 0 })
   progressCount: number;
-
-  @ApiProperty({ description: 'Mục tiêu snapshot trong ngày', default: 1 })
-  @Column({ type: 'int', default: 1 })
-  targetCount: number;
 
   @ApiPropertyOptional({ description: 'Thời điểm hoàn thành' })
   @Column({ type: 'timestamptz', nullable: true })
   completedAt?: Date;
 
-  @ApiProperty({ description: 'Điểm đã cộng', default: 0 })
+  @ApiProperty({ description: 'Điểm đã được cộng, tránh cộng trùng' })
   @Column({ type: 'int', default: 0 })
   pointsAwarded: number;
 
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user?: UserEntity;
-
-  @ManyToOne(() => DailyChallengeEntity, challenge => challenge.progressRecords, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => DailyChallengeEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'dailyChallengeId' })
   dailyChallenge?: DailyChallengeEntity;
 }

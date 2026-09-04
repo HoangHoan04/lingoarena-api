@@ -1,54 +1,47 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
-import { UserEntity } from '../auth/user.entity';
+import { ApiProperty } from '@nestjs/swagger';
+import { Column, Entity, Index } from 'typeorm';
 import { PrimaryBaseEntity } from '../base.entity';
-import { ExamSkillEntity } from '../exam/exam-skill.entity';
 
+/**
+ * Bảng `arena_ratings` — ELO của người chơi, tách riêng theo từng kỹ năng.
+ * Giỏi Reading không có nghĩa là giỏi Listening, nên không dùng một ELO chung.
+ */
 @Entity('arena_ratings')
-@Index('idx_arena_ratings_user_skill', ['userId', 'examSkillId'], { unique: true })
-@Index('idx_arena_ratings_skill_elo', ['examSkillId', 'eloRating'])
+@Index('uq_arena_ratings_user_structure', ['userId', 'examStructureId'], {
+  unique: true,
+  where: '"isDeleted" = false',
+})
+@Index('idx_arena_ratings_elo', ['examStructureId', 'eloRating'])
 export class ArenaRatingEntity extends PrimaryBaseEntity {
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người dùng' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người chơi' })
   @Column({ type: 'uuid' })
   userId: string;
 
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến kỹ năng kỳ thi' })
+  @ApiProperty({ description: 'Kỹ năng — node cấu trúc cấp SKILL' })
   @Column({ type: 'uuid' })
-  examSkillId: string;
+  examStructureId: string;
 
-  @ApiProperty({ description: 'Điểm xếp hạng ELO', default: 1000 })
+  @ApiProperty({ description: 'Điểm ELO hiện tại' })
   @Column({ type: 'int', default: 1000 })
   eloRating: number;
 
-  @ApiProperty({ description: 'Điểm ELO cao nhất từng đạt', default: 1000 })
+  @ApiProperty({ description: 'ELO cao nhất từng đạt' })
   @Column({ type: 'int', default: 1000 })
   peakElo: number;
 
-  @ApiProperty({ description: 'Số trận đã đấu', default: 0 })
+  @ApiProperty({ description: 'Số trận đã đấu' })
   @Column({ type: 'int', default: 0 })
   matchesPlayed: number;
 
-  @ApiProperty({ description: 'Số trận thắng', default: 0 })
+  @ApiProperty({ description: 'Số trận thắng' })
   @Column({ type: 'int', default: 0 })
   wins: number;
 
-  @ApiProperty({ description: 'Số trận thua', default: 0 })
+  @ApiProperty({ description: 'Số trận thua' })
   @Column({ type: 'int', default: 0 })
   losses: number;
 
-  @ApiProperty({ description: 'Số trận hòa', default: 0 })
+  @ApiProperty({ description: 'Số trận hòa' })
   @Column({ type: 'int', default: 0 })
   draws: number;
-
-  @ApiPropertyOptional({ description: 'Thời điểm trận đấu gần nhất' })
-  @Column({ type: 'timestamptz', nullable: true })
-  lastMatchAt?: Date;
-
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user?: UserEntity;
-
-  @ManyToOne(() => ExamSkillEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'examSkillId' })
-  examSkill?: ExamSkillEntity;
 }

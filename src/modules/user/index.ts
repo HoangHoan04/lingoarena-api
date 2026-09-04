@@ -8,9 +8,9 @@ import { AuthModule } from '../auth';
 import { UserAuthController } from '../auth/controllers/user-auth.controller';
 import { ClassroomModule } from '../classroom';
 import { UserClassroomController } from '../classroom/controllers/user-classroom.controller';
-import { CommerceModule } from '../commerce';
-import { UserCommerceController } from '../commerce/controllers/user-commerce.controller';
 import { PREFIX_MODULE } from '../config-module';
+import { ConversationModule } from '../conversation';
+import { UserConversationController } from '../conversation/controllers/user-conversation.controller';
 import { CourseModule } from '../course';
 import { UserCourseController } from '../course/controllers/user-course.controller';
 import { ExamModule } from '../exam';
@@ -19,21 +19,23 @@ import { GamificationModule } from '../gamification';
 import { UserGamificationController } from '../gamification/controllers/user-gamification.controller';
 import { GrammarModule } from '../grammar';
 import { UserGrammarController } from '../grammar/controllers/user-grammar.controller';
-import { LearningModule } from '../learning';
-import { UserLearningController } from '../learning/controllers/user-learning.controller';
 import { LeaderboardModule } from '../leaderboard';
 import { UserLeaderboardController } from '../leaderboard/controllers/user-leaderboard.controller';
+import { LearningModule } from '../learning';
+import { UserLearningController } from '../learning/controllers/user-learning.controller';
 import { MediaModule } from '../media';
 import { UserMediaController } from '../media/controllers/user-media.controller';
 import { NotificationModule } from '../notification';
 import { UserNotificationController } from '../notification/controllers/user-notification.controller';
 import { NotifyModule } from '../notify';
+import { OrganizationModule } from '../organization';
+import { UserOrganizationController } from '../organization/controllers/user-organization.controller';
 import { QuestionModule } from '../question';
 import { UserQuestionController } from '../question/controllers/user-question.controller';
-import { TranslateModule } from '../translate';
-import { UserTranslateController } from '../translate/controllers/user-translate.controller';
 import { SupportModule } from '../support';
 import { UserSupportController } from '../support/controllers/user-support.controller';
+import { TranslateModule } from '../translate';
+import { UserTranslateController } from '../translate/controllers/user-translate.controller';
 import { VietQrModule } from '../vietQr';
 import { VietQrController } from '../vietQr/vietQr.controller';
 import { VocabularyModule } from '../vocabulary';
@@ -54,9 +56,10 @@ import { ZaloController } from '../zalo/zalo.controller';
     UserAssessmentController,
     UserVocabularyController,
     UserGrammarController,
-    UserCommerceController,
+    UserConversationController,
     UserClassroomController,
     UserNotificationController,
+    UserOrganizationController,
     UserSupportController,
     UserMediaController,
     UserGamificationController,
@@ -77,9 +80,10 @@ import { ZaloController } from '../zalo/zalo.controller';
     VocabularyModule,
     GrammarModule,
     LearningModule,
-    CommerceModule,
+    ConversationModule,
     ClassroomModule,
     NotificationModule,
+    OrganizationModule,
     SupportModule,
     MediaModule,
     GamificationModule,

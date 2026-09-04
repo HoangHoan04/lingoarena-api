@@ -1,10 +1,4 @@
-import {
-  VocabularyCollocationEntity,
-  VocabularyDeckEntity,
-  VocabularyEntity,
-  VocabularyExampleEntity,
-  VocabularyRelationEntity,
-} from '~/entities';
+import { VocabularyDeckEntity, VocabularyEntity, VocabularyRelationEntity } from '~/entities';
 
 export function normalizeHeadword(raw: string): string {
   return (raw || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -21,17 +15,9 @@ export function slugify(raw: string): string {
 }
 
 export function buildPublicWord(word: VocabularyEntity, extra?: Record<string, unknown>) {
-  const example = (word.examples || []).slice().sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))[0];
-  const collocations = (word.collocations || [])
-    .slice()
-    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
-    .map((item: VocabularyCollocationEntity) => ({
-      id: item.id,
-      collocation: item.collocation,
-      meaningVi: item.meaningVi || null,
-      exampleSentence: item.exampleSentence || null,
-      sortOrder: item.sortOrder,
-    }));
+  const examples = word.examplesJson || [];
+  const example = examples[0] || null;
+  const collocations = word.collocationsJson || [];
   const relations = (word.relations || []).map((item: VocabularyRelationEntity) => ({
     id: item.id,
     relationType: item.relationType,
@@ -40,14 +26,6 @@ export function buildPublicWord(word: VocabularyEntity, extra?: Record<string, u
     relatedMeaningVi: item.relatedVocabulary?.meaningVi || null,
     relatedPartOfSpeech: item.relatedVocabulary?.partOfSpeech || null,
   }));
-  const topics = (word.vocabularyTopics || [])
-    .map(item => item.topic)
-    .filter(Boolean)
-    .map(topic => ({ id: topic.id, code: topic.code, name: topic.name }));
-  const examTypes = (word.vocabularyExamTypes || [])
-    .map(item => item.examType)
-    .filter(Boolean)
-    .map(exam => ({ id: exam.id, code: exam.code, name: exam.name }));
 
   return {
     id: word.id,
@@ -56,30 +34,20 @@ export function buildPublicWord(word: VocabularyEntity, extra?: Record<string, u
     partOfSpeech: word.partOfSpeech,
     ipaUk: word.ipaUk || null,
     ipaUs: word.ipaUs || null,
-    audioUkAssetId: word.audioUkAssetId || null,
-    audioUsAssetId: word.audioUsAssetId || null,
-    audioUkUrl: word.audioUkAsset?.publicUrl || null,
-    audioUsUrl: word.audioUsAsset?.publicUrl || null,
-    definitionEn: word.definitionEn,
+    audioUkUrl: word.audioUkUrl || null,
+    audioUsUrl: word.audioUsUrl || null,
+    imageUrl: word.imageUrl || null,
+    definitionVi: word.definitionVi || null,
+    definitionEn: word.definitionEn || null,
     meaningVi: word.meaningVi,
     cefrLevel: word.cefrLevel || null,
-    status: word.status,
     frequencyLevel: word.frequencyLevel || 1,
     isDeleted: word.isDeleted,
-    exampleEn: example?.sentence || null,
-    exampleVi: example?.translation || null,
-    examples: (word.examples || []).map((item: VocabularyExampleEntity) => ({
-      id: item.id,
-      sentence: item.sentence,
-      translation: item.translation,
-      sortOrder: item.sortOrder,
-    })),
+    exampleEn: (example as { sentence?: string } | null)?.sentence || null,
+    exampleVi: (example as { translation?: string } | null)?.translation || null,
+    examples,
     collocations,
     relations,
-    topics,
-    examTypes,
-    topicIds: topics.map(item => item.id),
-    examTypeIds: examTypes.map(item => item.id),
     ...extra,
   };
 }
@@ -88,16 +56,14 @@ export function buildPublicDeck(deck: VocabularyDeckEntity, extra?: Record<strin
   return {
     id: deck.id,
     title: deck.title,
+    titleEn: deck.titleEn || null,
     slug: deck.slug,
     description: deck.description || null,
     thumbnailUrl: deck.thumbnailUrl || null,
     visibility: deck.visibility,
     ownerType: deck.ownerType,
-    examTypeId: deck.examTypeId || null,
-    examType: deck.examType
-      ? { id: deck.examType.id, code: deck.examType.code, name: deck.examType.name }
-      : null,
-    level: deck.level || null,
+    cefrLevel: deck.cefrLevel || null,
+    level: deck.cefrLevel || null,
     itemCount: deck.itemCount || 0,
     isDeleted: deck.isDeleted,
     estimatedMinutes: Math.max(3, Math.ceil((deck.itemCount || 0) * 0.4)),

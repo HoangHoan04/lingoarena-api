@@ -1,9 +1,15 @@
 import { Body, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { DefController, DefGet, DefPost } from '~/common/core/decorator';
-import { JwtOptionalGuard } from '~/common/guards';
-import { PaginationDto } from '~/dto';
-import { FilterQuestionDto, GradePracticeDto, StartPracticeDto } from '../dto';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CurrentUser, DefController, DefGet, DefPost } from '~/common/core/decorator';
+import { JwtAuthGuard, JwtOptionalGuard } from '~/common/guards';
+import { PaginationDto, UserDto } from '~/dto';
+import {
+  FilterQuestionDto,
+  FilterQuestionGroupDto,
+  GradePracticeDto,
+  StartGroupSessionDto,
+  StartPracticeDto,
+} from '../dto';
 import { QuestionService } from '../service/question.service';
 
 @ApiTags('User - Question')
@@ -65,6 +71,32 @@ export class UserQuestionController {
   @ApiOperation({ summary: 'Chấm một câu luyện' })
   gradePractice(@Body() dto: GradePracticeDto) {
     return this.service.gradePractice(dto);
+  }
+
+  @UseGuards(JwtOptionalGuard)
+  @DefPost('groups/pagination')
+  @ApiOperation({ summary: 'Danh sách nhóm đọc / nghe đã duyệt' })
+  paginationGroups(@Body() body: PaginationDto<FilterQuestionGroupDto>) {
+    return this.service.paginationGroups(body, true);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @DefPost('groups/:id/start-session')
+  @ApiOperation({ summary: 'Bắt đầu phiên đọc hoặc nghe chép' })
+  startGroupSession(
+    @Param('id') id: string,
+    @Body() dto: StartGroupSessionDto,
+    @CurrentUser() user: UserDto,
+  ) {
+    return this.service.startGroupSession(id, dto, user);
+  }
+
+  @UseGuards(JwtOptionalGuard)
+  @DefGet('groups/:id')
+  @ApiOperation({ summary: 'Chi tiết nhóm đọc / nghe công khai' })
+  findGroup(@Param('id') id: string) {
+    return this.service.findGroup(id, true);
   }
 
   @UseGuards(JwtOptionalGuard)

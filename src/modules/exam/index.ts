@@ -1,6 +1,6 @@
 import { MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ChildModule } from '~/common/core/decorator';
-import { ExamSectionRepo, ExamSkillRepo, ExamTypeRepo } from '~/repositories';
+import { ExamStructureRepo, ExamTypeRepo, AssessmentRepo } from '~/repositories';
 import { TypeOrmExModule } from '~/typeorm';
 import { ActionLogModule } from '../action-log';
 import { ExamService } from './service';
@@ -9,7 +9,7 @@ import { ExamService } from './service';
   providers: [ExamService],
   controllers: [],
   imports: [
-    TypeOrmExModule.forCustomRepository([ExamTypeRepo, ExamSkillRepo, ExamSectionRepo]),
+    TypeOrmExModule.forCustomRepository([ExamTypeRepo, ExamStructureRepo, AssessmentRepo]),
     ActionLogModule,
   ],
   exports: [ExamService],

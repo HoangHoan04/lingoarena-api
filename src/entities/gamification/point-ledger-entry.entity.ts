@@ -1,42 +1,39 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index } from 'typeorm';
 import { enumData } from '~/common/enums/base.enum';
-import { UserEntity } from '../auth/user.entity';
 import { PrimaryBaseEntity } from '../base.entity';
 
+/**
+ * Bảng `point_ledger_entries` — sổ cái điểm, chỉ thêm không sửa.
+ *
+ * Bản thân bảng đã là lịch sử đầy đủ nên KHÔNG ghi action log cho nó
+ * (quyết định 9.4). `points` cho phép số âm để trừ điểm / điều chỉnh tay.
+ */
 @Entity('point_ledger_entries')
-@Index('idx_point_ledger_user_created', ['userId', 'createdAt'])
-@Index('idx_point_ledger_ref', ['refType', 'refId'])
+@Index('idx_point_ledger_entries_user', ['userId', 'earnedAt'])
+@Index('idx_point_ledger_entries_reason', ['userId', 'reason'])
 export class PointLedgerEntryEntity extends PrimaryBaseEntity {
-  @ApiProperty({ description: 'Khóa ngoại người dùng' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người dùng' })
   @Column({ type: 'uuid' })
   userId: string;
 
-  @ApiProperty({ description: 'Số điểm (dương cộng, âm trừ)' })
-  @Column({ type: 'int' })
-  amount: number;
-
-  @ApiProperty({ description: 'Số dư sau giao dịch' })
-  @Column({ type: 'int' })
-  balanceAfter: number;
-
-  @ApiProperty({ enum: enumData.POINT_REASON, description: 'Lý do biến động điểm' })
-  @Column({ type: 'varchar', length: 50 })
+  @ApiProperty({ enum: enumData.POINT_REASON, description: 'Lý do cộng / trừ điểm' })
+  @Column({ type: 'varchar', length: 30 })
   reason: string;
 
-  @ApiPropertyOptional({ description: 'Loại nguồn (arena_match, lesson, order...)' })
-  @Column({ type: 'varchar', length: 50, nullable: true })
-  refType?: string;
+  @ApiProperty({ description: 'Số điểm, âm nghĩa là trừ' })
+  @Column({ type: 'int' })
+  points: number;
 
-  @ApiPropertyOptional({ description: 'ID nguồn' })
+  @ApiPropertyOptional({ description: 'Loại nguồn phát sinh điểm' })
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  sourceType?: string;
+
+  @ApiPropertyOptional({ description: 'ID nguồn tương ứng với sourceType' })
   @Column({ type: 'uuid', nullable: true })
-  refId?: string;
+  sourceId?: string;
 
-  @ApiPropertyOptional({ description: 'Ghi chú' })
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  description?: string;
-
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user?: UserEntity;
+  @ApiProperty({ description: 'Thời điểm ghi nhận' })
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  earnedAt: Date;
 }

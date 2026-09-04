@@ -1,34 +1,36 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { enumData } from '~/common/enums/base.enum';
-import { AssessmentAttemptEntity } from '../assessment/assessment-attempt.entity';
-import { UserEntity } from '../auth/user.entity';
 import { PrimaryBaseEntity } from '../base.entity';
 import { AssignmentEntity } from './assignment.entity';
 
+/**
+ * Bảng `assignment_submissions` — bài nộp của học viên.
+ * File bài làm (N file) gắn qua `media_attachments`.
+ */
 @Entity('assignment_submissions')
-@Index('idx_assignment_subs_assign_user', ['assignmentId', 'userId'], { unique: true })
-@Index('idx_assignment_subs_assignment_id', ['assignmentId'])
-@Index('idx_assignment_subs_user_id', ['userId'])
+@Index('uq_assignment_submissions_link', ['assignmentId', 'userId'], {
+  unique: true,
+  where: '"isDeleted" = false',
+})
+@Index('idx_assignment_submissions_user', ['userId'])
 export class AssignmentSubmissionEntity extends PrimaryBaseEntity {
   @ApiProperty({ description: 'Khóa ngoại tham chiếu đến bài tập' })
   @Column({ type: 'uuid' })
   assignmentId: string;
 
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến học sinh nộp bài' })
+  @ApiProperty({ description: 'Học viên nộp bài' })
   @Column({ type: 'uuid' })
   userId: string;
 
-  @ApiPropertyOptional({
-    description: 'Khóa ngoại tham chiếu đến lượt làm bài thi nếu bài tập dạng đề thi',
-  })
+  @ApiPropertyOptional({ description: 'Lượt thi gắn kèm nếu bài tập là đề thi' })
   @Column({ type: 'uuid', nullable: true })
-  attemptId?: string;
+  assessmentAttemptId?: string;
 
   @ApiProperty({
     enum: enumData.ASSIGNMENT_SUBMISSION_STATUS,
     default: enumData.ASSIGNMENT_SUBMISSION_STATUS.SUBMITTED.code,
-    description: 'Trạng thái nộp bài',
+    description: 'Trạng thái bài nộp',
   })
   @Column({
     type: 'varchar',
@@ -37,39 +39,27 @@ export class AssignmentSubmissionEntity extends PrimaryBaseEntity {
   })
   status: string;
 
-  @ApiProperty({ description: 'Thời điểm nộp bài' })
-  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
-  submittedAt: Date;
+  @ApiPropertyOptional({ description: 'Nội dung nộp dạng chữ' })
+  @Column({ type: 'text', nullable: true })
+  contentText?: string;
 
-  @ApiPropertyOptional({ description: 'Điểm số đạt được' })
-  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  @ApiPropertyOptional({ description: 'Điểm giáo viên chấm' })
+  @Column({ type: 'numeric', precision: 6, scale: 2, nullable: true })
   score?: number;
 
   @ApiPropertyOptional({ description: 'Nhận xét của giáo viên' })
   @Column({ type: 'text', nullable: true })
-  feedback?: string;
+  teacherFeedback?: string;
 
-  @ApiPropertyOptional({ description: 'Khóa ngoại tham chiếu đến giáo viên chấm bài' })
-  @Column({ type: 'uuid', nullable: true })
-  gradedByUserId?: string;
+  @ApiPropertyOptional({ description: 'Thời điểm nộp' })
+  @Column({ type: 'timestamptz', nullable: true })
+  submittedAt?: Date;
 
-  @ApiPropertyOptional({ description: 'Thời điểm chấm bài' })
+  @ApiPropertyOptional({ description: 'Thời điểm chấm' })
   @Column({ type: 'timestamptz', nullable: true })
   gradedAt?: Date;
 
   @ManyToOne(() => AssignmentEntity, assignment => assignment.submissions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'assignmentId' })
   assignment?: AssignmentEntity;
-
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user?: UserEntity;
-
-  @ManyToOne(() => AssessmentAttemptEntity, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({ name: 'attemptId' })
-  attempt?: AssessmentAttemptEntity;
-
-  @ManyToOne(() => UserEntity, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({ name: 'gradedByUserId' })
-  gradedByTeacher?: UserEntity;
 }

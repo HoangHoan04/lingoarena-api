@@ -41,7 +41,9 @@ export function matchApiPath(requestPath: string, pattern: string): boolean {
     return normalizedRequest.startsWith(normalizedPattern.slice(0, -1));
   }
 
-  return normalizedRequest === normalizedPattern || normalizedRequest.startsWith(`${normalizedPattern}/`);
+  return (
+    normalizedRequest === normalizedPattern || normalizedRequest.startsWith(`${normalizedPattern}/`)
+  );
 }
 
 export function isAuthSelfPath(requestPath: string): boolean {
@@ -62,6 +64,7 @@ export function mergeRolePermissions(
     id?: string;
     code: string;
     name: string;
+    permissionCodes?: string[] | null;
     permissionKeys?: string;
     apiAllowPaths?: string;
     apiDenyPaths?: string;
@@ -76,6 +79,11 @@ export function mergeRolePermissions(
   const apiNoAccessSet = new Set<string>();
 
   for (const role of roles) {
+    (role.permissionCodes || []).forEach(item => {
+      permissionSet.add(item);
+      pathWebSet.add(item);
+      if (item.startsWith('/api')) apiAccessSet.add(item);
+    });
     const menuKeys = role.permissionKeys ?? role.roleStringify;
     const allowPaths = role.apiAllowPaths ?? role.lstPathApiAccess;
     const denyPaths = role.apiDenyPaths ?? role.lstPathApiNoAccess;

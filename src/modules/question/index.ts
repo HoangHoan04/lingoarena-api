@@ -1,46 +1,40 @@
 import { MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ChildModule } from '~/common/core/decorator';
 import {
-  ContentReviewRepo,
-  ExamSectionRepo,
-  ExamSkillRepo,
+  ContentSegmentRepo,
+  ContentTaxonomyRepo,
+  ExamStructureRepo,
   ExamTypeRepo,
   QuestionGroupRepo,
   QuestionOptionRepo,
   QuestionRepo,
-  QuestionTagRepo,
-  QuestionTopicRepo,
-  QuestionTypeRepo,
-  QuestionVersionRepo,
-  TagRepo,
-  TopicRepo,
+  StudySessionItemRepo,
+  StudySessionRepo,
+  TaxonomyRepo,
 } from '~/repositories';
 import { TypeOrmExModule } from '~/typeorm';
 import { ActionLogModule } from '../action-log';
-import { QuestionService } from './service';
+import { QuestionService, YoutubeTranscriptService } from './service';
 
 @ChildModule({
-  providers: [QuestionService],
+  providers: [QuestionService, YoutubeTranscriptService],
   controllers: [],
   imports: [
     TypeOrmExModule.forCustomRepository([
-      QuestionTypeRepo,
       QuestionGroupRepo,
+      ContentSegmentRepo,
       QuestionRepo,
-      QuestionVersionRepo,
       QuestionOptionRepo,
-      TopicRepo,
-      QuestionTopicRepo,
-      TagRepo,
-      QuestionTagRepo,
-      ContentReviewRepo,
+      TaxonomyRepo,
+      ContentTaxonomyRepo,
       ExamTypeRepo,
-      ExamSkillRepo,
-      ExamSectionRepo,
+      ExamStructureRepo,
+      StudySessionRepo,
+      StudySessionItemRepo,
     ]),
     ActionLogModule,
   ],
-  exports: [QuestionService],
+  exports: [QuestionService, YoutubeTranscriptService],
 })
 export class QuestionModule implements NestModule {
   configure(_consumer: MiddlewareConsumer) {}

@@ -1,10 +1,9 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { enumData } from '~/common/enums/base.enum';
-import { UserRepo } from '~/repositories';
 import { configEnv } from '~/config/env';
-import { hasStaffAccess, resolveDisplayName } from './helpers';
+import { UserRepo } from '~/repositories';
+import { resolveDisplayName } from './helpers';
 
 const { JWT_SECRET } = configEnv();
 
@@ -29,11 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       relations: {
         profile: true,
         userRoles: {
-          role: {
-            rolePermissions: {
-              permission: true,
-            },
-          },
+          role: true,
         },
       },
     });
@@ -42,20 +37,26 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Không có quyền truy cập');
     }
 
-    if (user.status === enumData.USER_STATUS.SUSPENDED.code) {
+    if (user.isDeleted === true) {
       throw new UnauthorizedException('Tài khoản đã bị tạm khóa, vui lòng liên hệ bộ phận hỗ trợ');
     }
 
     const roles = user.userRoles?.map(ur => ur.role?.code).filter(Boolean) || [];
     const permissions = Array.from(
       new Set(
-        user.userRoles?.flatMap(
-          ur => ur.role?.rolePermissions?.map(rp => rp.permission?.code).filter(Boolean) || [],
-        ) || [],
+        user.userRoles?.flatMap(ur => ur.role?.permissionCodes || []) || [],
       ),
     );
 
-    const isAdmin = hasStaffAccess(roles);
+    const isAdmin = Boolean(
+      (user as any).isAdmin ||
+      roles.some(
+        r => {
+          const upper = String(r).toUpperCase();
+          return upper === 'ADMIN' || upper === 'SUPER_ADMIN' || upper === 'SUPERADMIN';
+        },
+      ),
+    );
     const name = resolveDisplayName(user.profile, user) || user.email;
 
     return {
@@ -63,7 +64,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: user.email,
       phone: user.phone,
       username: user.username || user.email,
-      status: user.status,
       name,
       fullName: user.profile?.fullName || name,
       avatarUrl: user.profile?.avatarUrl,

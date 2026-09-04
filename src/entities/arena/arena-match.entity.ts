@@ -2,84 +2,70 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { enumData } from '~/common/enums/base.enum';
 import { PrimaryBaseEntity } from '../base.entity';
-import { ExamSkillEntity } from '../exam/exam-skill.entity';
-import { TopicEntity } from '../question/topic.entity';
+import { ExamStructureEntity } from '../exam/exam-structure.entity';
 import { ArenaMatchParticipantEntity } from './arena-match-participant.entity';
 import { ArenaMatchQuestionEntity } from './arena-match-question.entity';
-import { ArenaSeasonEntity } from './arena-season.entity';
 
+/**
+ * Bảng `arena_matches` — một trận đấu.
+ * Ghi 1 dòng action log khi trận kết thúc, không log từng câu trả lời
+ * (quyết định 9.4).
+ */
 @Entity('arena_matches')
-@Index('idx_arena_matches_skill_id', ['examSkillId'])
 @Index('idx_arena_matches_status', ['status'])
-@Index('idx_arena_matches_season_id', ['seasonId'])
+@Index('idx_arena_matches_structure', ['examStructureId'])
 export class ArenaMatchEntity extends PrimaryBaseEntity {
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến kỹ năng kỳ thi' })
+  @ApiProperty({ description: 'Kỹ năng thi đấu — node cấu trúc cấp SKILL (bắt buộc)' })
   @Column({ type: 'uuid' })
-  examSkillId: string;
+  examStructureId: string;
 
-  @ApiPropertyOptional({ description: 'Khóa ngoại tham chiếu đến chủ đề' })
+  @ApiPropertyOptional({ description: 'Chủ đề của trận' })
   @Column({ type: 'uuid', nullable: true })
-  topicId?: string;
+  taxonomyId?: string;
 
-  @ApiPropertyOptional({ description: 'Khóa ngoại tham chiếu đến mùa đấu' })
-  @Column({ type: 'uuid', nullable: true })
-  seasonId?: string;
-
-  @ApiProperty({
-    enum: enumData.ARENA_MATCH_MODE,
-    default: enumData.ARENA_MATCH_MODE.RANKED.code,
-    description: 'Chế độ trận đấu',
-  })
-  @Column({ type: 'varchar', length: 20, default: enumData.ARENA_MATCH_MODE.RANKED.code })
+  @ApiProperty({ enum: enumData.ARENA_MATCH_MODE, description: 'Chế độ chơi' })
+  @Column({ type: 'varchar', length: 20 })
   matchMode: string;
 
-  @ApiProperty({ description: 'Số lượng người chơi tối đa', default: 2 })
+  @ApiProperty({ description: 'Số người chơi tối đa' })
   @Column({ type: 'int', default: 2 })
   maxPlayers: number;
 
-  @ApiProperty({ description: 'Số lượng câu hỏi trong trận', default: 10 })
+  @ApiProperty({ description: 'Số câu hỏi trong trận' })
   @Column({ type: 'int', default: 10 })
   questionCount: number;
 
-  @ApiProperty({ description: 'Thời lượng trận đấu (giây)', default: 0 })
-  @Column({ type: 'int', default: 0 })
+  @ApiProperty({ description: 'Thời lượng trận (giây)' })
+  @Column({ type: 'int', default: 300 })
   durationSeconds: number;
 
   @ApiProperty({
     enum: enumData.ARENA_MATCH_STATUS,
     default: enumData.ARENA_MATCH_STATUS.WAITING.code,
-    description: 'Trạng thái trận đấu',
+    description: 'Trạng thái trận',
   })
   @Column({ type: 'varchar', length: 20, default: enumData.ARENA_MATCH_STATUS.WAITING.code })
   status: string;
 
-  @ApiPropertyOptional({ description: 'Thời điểm bắt đầu trận đấu' })
+  @ApiPropertyOptional({ description: 'Thời điểm bắt đầu' })
   @Column({ type: 'timestamptz', nullable: true })
   startedAt?: Date;
 
-  @ApiPropertyOptional({ description: 'Thời điểm kết thúc trận đấu' })
+  @ApiPropertyOptional({ description: 'Thời điểm kết thúc' })
   @Column({ type: 'timestamptz', nullable: true })
   finishedAt?: Date;
 
-  @ApiPropertyOptional({ description: 'Cấu hình trận đấu dạng JSON' })
+  @ApiPropertyOptional({ description: 'Cấu hình riêng của trận' })
   @Column({ type: 'jsonb', nullable: true })
   matchConfigJson?: Record<string, unknown>;
 
-  @ManyToOne(() => ExamSkillEntity, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'examSkillId' })
-  examSkill?: ExamSkillEntity;
+  @ManyToOne(() => ExamStructureEntity, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'examStructureId' })
+  examStructure?: ExamStructureEntity;
 
-  @ManyToOne(() => TopicEntity, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({ name: 'topicId' })
-  topic?: TopicEntity;
+  @OneToMany(() => ArenaMatchQuestionEntity, question => question.arenaMatch)
+  questions?: ArenaMatchQuestionEntity[];
 
-  @ManyToOne(() => ArenaSeasonEntity, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({ name: 'seasonId' })
-  season?: ArenaSeasonEntity;
-
-  @OneToMany(() => ArenaMatchQuestionEntity, mq => mq.match)
-  matchQuestions?: ArenaMatchQuestionEntity[];
-
-  @OneToMany(() => ArenaMatchParticipantEntity, mp => mp.match)
+  @OneToMany(() => ArenaMatchParticipantEntity, participant => participant.arenaMatch)
   participants?: ArenaMatchParticipantEntity[];
 }

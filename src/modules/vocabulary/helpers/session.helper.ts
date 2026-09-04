@@ -1,3 +1,4 @@
+import { enumData } from '~/common/enums/base.enum';
 import { UserVocabularyStateEntity, VocabularyEntity } from '~/entities';
 import { isDue } from './srs.helper';
 
@@ -37,7 +38,7 @@ export function summarizeProgress(total: number, states: UserVocabularyStateEnti
 
   for (const state of states) {
     newCount -= 1;
-    if (state.state === 'mastered') masteredCount += 1;
+    if (state.srsState === enumData.VOCAB_SRS_STATE.MASTERED.code) masteredCount += 1;
     else learningCount += 1;
     if (isDue(state, now)) dueCount += 1;
   }

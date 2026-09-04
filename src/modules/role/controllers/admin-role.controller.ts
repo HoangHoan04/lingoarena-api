@@ -8,10 +8,11 @@ import {
   DefPost,
   DefPut,
 } from '~/common/core/decorator';
+import { SkipThrottle } from '@nestjs/throttler';
 import { JwtAuthGuard, PermissionGuard } from '~/common/guards';
 import { SuccessResponse } from '~/common/helpers/page.helper';
-import { PaginationDto, UserDto } from '~/dto';
-import { CreateRoleDto, FilterRoleDto, UpdateRoleDto } from '../dto';
+import { ExcelImportBatchDto, PaginationDto, UserDto } from '~/dto';
+import { AssignUserRoleDto, CreateRoleDto, FilterRoleDto, UpdateRoleDto } from '../dto';
 import { RoleService } from '../role.service';
 
 @ApiBearerAuth()
@@ -25,6 +26,13 @@ export class AdminRoleController {
   @ApiOperation({ summary: 'Tạo mới vai trò' })
   async create(@Body() dto: CreateRoleDto, @CurrentUser() user: UserDto): Promise<SuccessResponse> {
     return await this.service.create(dto, user);
+  }
+
+  @SkipThrottle()
+  @DefPost('import')
+  @ApiOperation({ summary: 'Nhập Excel vai trò' })
+  importRoles(@Body() dto: ExcelImportBatchDto, @CurrentUser() user: UserDto) {
+    return this.service.importRoles(dto, user);
   }
 
   @DefPost('pagination')
@@ -58,7 +66,13 @@ export class AdminRoleController {
   }
 
   @DefPost('export-excel')
-  async exportExcel() {
-    return await this.service.exportToExcel();
+  async exportExcel(@Body() body: PaginationDto<FilterRoleDto>) {
+    return await this.service.exportToExcel(body);
+  }
+
+  @DefPost('assign-user')
+  @ApiOperation({ summary: 'Gán vai trò cho người dùng' })
+  assignUserRole(@Body() dto: AssignUserRoleDto, @CurrentUser() user: UserDto) {
+    return this.service.assignUserRole(dto, user);
   }
 }

@@ -13,41 +13,27 @@ export class VietQrController {
 
   @ApiOperation({ summary: 'Get token' })
   @DefPost('api/token_generate')
-  async createTokenVietQr(@Req() req: IRequest) {
-    return await this.service.createTokenVietQr(req);
-  }
+  async createTokenVietQr(@Req() req: IRequest) {}
 
   @ApiOperation({ summary: 'Get token test' })
   @DefPost('api/token_generate_test')
-  async createTokenVietQrTest() {
-    return await this.service.createTokenVietQrTest();
-  }
+  async createTokenVietQrTest() {}
 
   @ApiOperation({ summary: 'Transaction sync' })
   @DefPost('bank/api/transaction-sync')
-  async webhookReceiveTransaction(@Req() req: IRequest, @Body() data: ReceiveTransactionDto) {
-    return await this.service.webhookReceiveTransaction(req, data);
-  }
+  async webhookReceiveTransaction(@Req() req: IRequest, @Body() data: ReceiveTransactionDto) {}
 
   @ApiOperation({ summary: 'Transaction sync test' })
   @DefPost('bank/api/test/transaction-callback')
-  async webhookReceiveTransaction2(@Req() req: IRequest, @Body() data: ReceiveTransactionDto) {
-    return await this.service.webhookReceiveTransaction(req, data);
-  }
+  async webhookReceiveTransaction2(@Req() req: IRequest, @Body() data: ReceiveTransactionDto) {}
   @DefPost('simulator-callback')
-  async simulatorReceiveTransaction(@Body() data: ReceiveTransactionDto) {
-    return await this.service.simulatorReceiveTransaction(data);
-  }
+  async simulatorReceiveTransaction(@Body() data: ReceiveTransactionDto) {}
 
   @ApiOperation({ summary: 'Gen base 64' })
   @DefPost('gen_base64')
-  async genBase64(@Body() data: FilterOneVietQrDto) {
-    return await this.service.genBase64(data);
-  }
+  async genBase64(@Body() data: FilterOneVietQrDto) {}
 
   @ApiOperation({ summary: 'Lấy token truy cập vietqr' })
   @DefPost('api/get_token_vietqr')
-  async getTokenVietQr() {
-    return await this.service.getTokenVietQr();
-  }
+  async getTokenVietQr() {}
 }

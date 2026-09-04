@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, DefController, DefGet, DefPost } from '~/common/core/decorator';
 import { JwtAuthGuard, JwtOptionalGuard } from '~/common/guards';
 import { PaginationDto, UserDto } from '~/dto';
-import { EnrollCourseDto, FilterCourseDto, UpdateLessonProgressDto } from '../dto';
+import { CreateCourseReviewDto, EnrollCourseDto, FilterCourseDto, UpdateLessonProgressDto } from '../dto';
 import { CourseService } from '../service/course.service';
 
 @ApiTags('User - Course')
@@ -67,5 +67,17 @@ export class UserCourseController {
     @CurrentUser() user: UserDto,
   ) {
     return this.service.updateProgress(id, user.id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @DefPost(':id/reviews')
+  @ApiOperation({ summary: 'Đánh giá khóa học' })
+  createReview(
+    @Param('id') id: string,
+    @Body() dto: CreateCourseReviewDto,
+    @CurrentUser() user: UserDto,
+  ) {
+    return this.service.createReview(id, dto, user);
   }
 }

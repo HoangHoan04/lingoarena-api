@@ -7,11 +7,7 @@ import { configEnv } from '~/config/env';
 import {
   ActionLogRepo,
   OauthAccountRepo,
-  PermissionRepo,
-  RefreshTokenRepo,
-  RolePermissionRepo,
   RoleRepo,
-  UserDeviceRepo,
   UserProfileRepo,
   UserRepo,
   UserRoleRepo,
@@ -20,6 +16,7 @@ import {
 } from '~/repositories';
 import { TypeOrmExModule } from '~/typeorm';
 import { ActionLogModule } from '../action-log';
+import { EmailModule } from '../email';
 import { JwtStrategy } from './jwt.strategy';
 import { AuthAdminService, AuthUserService } from './service';
 
@@ -43,16 +40,13 @@ const { JWT_EXPIRY, JWT_SECRET } = configEnv();
       UserProfileRepo,
       UserRoleRepo,
       RoleRepo,
-      PermissionRepo,
-      RolePermissionRepo,
       UserSessionRepo,
-      RefreshTokenRepo,
       OauthAccountRepo,
-      UserDeviceRepo,
       VerificationCodeRepo,
       ActionLogRepo,
     ]),
     ActionLogModule,
+    EmailModule,
   ],
 })
 export class AuthModule implements NestModule {

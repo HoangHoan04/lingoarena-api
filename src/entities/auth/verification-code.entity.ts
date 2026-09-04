@@ -9,8 +9,8 @@ import { UserEntity } from './user.entity';
 @Index('idx_verification_codes_expires_at', ['expiresAt'])
 export class VerificationCodeEntity extends PrimaryBaseEntity {
   @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người dùng' })
-  @Column({ type: 'uuid' })
-  userId: string;
+  @Column({ type: 'uuid', nullable: true })
+  userId?: string;
 
   @ApiProperty({ enum: enumData.OTP_PURPOSE, description: 'Mục đích mã OTP' })
   @Column({ type: 'varchar', length: 20 })

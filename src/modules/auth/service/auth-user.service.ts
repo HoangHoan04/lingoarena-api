@@ -1,26 +1,16 @@
+import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { HttpService } from '@nestjs/axios';
 import { createHash, randomBytes } from 'crypto';
 import { lastValueFrom } from 'rxjs';
+import { ILike, LessThan, MoreThan } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { enumData } from '~/common/enums/base.enum';
 import { configEnv } from '~/config/env';
-import {
-  OauthAccountEntity,
-  RefreshTokenEntity,
-  UserDeviceEntity,
-  UserEntity,
-  UserProfileEntity,
-  UserRoleEntity,
-  UserSessionEntity,
-  VerificationCodeEntity,
-} from '~/entities';
+import { UserEntity, UserProfileEntity } from '~/entities';
 import {
   OauthAccountRepo,
-  RefreshTokenRepo,
   RoleRepo,
-  UserDeviceRepo,
   UserProfileRepo,
   UserRepo,
   UserRoleRepo,
@@ -39,13 +29,8 @@ import {
   UserRegisterDto,
   VerifyOtpDto,
 } from '../dto';
-import {
-  buildPublicUser,
-  DEFAULT_CUSTOMER_ROLE,
-  isJwtLike,
-  normalizeEmail,
-  normalizeLoginIdentifier,
-} from '../helpers';
+import { EmailService } from '../../email/email.service';
+import { buildPublicUser, isJwtLike, normalizeEmail, normalizeLoginIdentifier } from '../helpers';
 
 const {
   JWT_SECRET,
@@ -72,12 +57,11 @@ export class AuthUserService {
     private readonly userRoleRepo: UserRoleRepo,
     private readonly roleRepo: RoleRepo,
     private readonly userSessionRepo: UserSessionRepo,
-    private readonly refreshTokenRepo: RefreshTokenRepo,
     private readonly oauthAccountRepo: OauthAccountRepo,
-    private readonly userDeviceRepo: UserDeviceRepo,
     private readonly verificationCodeRepo: VerificationCodeRepo,
     private readonly jwtService: JwtService,
     private readonly httpService: HttpService,
+    private readonly emailService: EmailService,
   ) {}
 
   // ─────────────────────────────────────────────────────────────
@@ -114,55 +98,49 @@ export class AuthUserService {
       where: { userId, isDeleted: false },
       relations: { role: true },
     });
-    return userRoles.map((ur) => ur.role?.code).filter(Boolean) as string[];
+    return userRoles.map(ur => ur.role?.code).filter(Boolean) as string[];
   }
 
   /**
-   * Tạo access token + refresh token, lưu session + refresh token vào DB
+   * Tạo access token + refresh token. Refresh hash nằm `user_sessions.tokenHash`,
+   * nhóm rotation nằm `familyId` (đã gộp bảng refresh_tokens).
    */
   private async generateAuthTokens(
     user: UserEntity,
     userAgent?: string,
     ipAddress?: string,
     deviceType?: string,
+    familyId?: string,
   ) {
     const roles = await this.getUserRoles(user.id);
     const accessToken = this.generateAccessToken(user, roles);
     const refreshTokenValue = this.generateRefreshTokenValue();
     const refreshTokenHash = this.hashToken(refreshTokenValue);
-    const familyId = uuidv4();
+    const resolvedFamilyId = familyId || uuidv4();
 
-    // Lưu UserSession (track access token hash)
-    const accessTokenHash = this.hashToken(accessToken);
-    const sessionExpiresAt = new Date();
-    sessionExpiresAt.setDate(sessionExpiresAt.getDate() + 1);
-
-    const session = this.userSessionRepo.create({
-      userId: user.id,
-      tokenHash: accessTokenHash,
-      ipAddress: ipAddress || null,
-      userAgent: userAgent || null,
-      deviceType: deviceType || 'web',
-      expiresAt: sessionExpiresAt,
-      isRevoked: false,
-      lastActivityAt: new Date(),
-    });
-    await this.userSessionRepo.save(session);
-
-    // Lưu RefreshToken
     const rtExpiresAt = new Date();
     rtExpiresAt.setDate(rtExpiresAt.getDate() + REFRESH_TOKEN_TTL_DAYS);
 
-    const refreshTokenEntity = this.refreshTokenRepo.create({
-      userId: user.id,
-      tokenHash: refreshTokenHash,
-      familyId,
-      isRevoked: false,
-      expiresAt: rtExpiresAt,
-    });
-    await this.refreshTokenRepo.save(refreshTokenEntity);
+    await this.userSessionRepo.save(
+      this.userSessionRepo.create({
+        id: uuidv4(),
+        userId: user.id,
+        tokenHash: refreshTokenHash,
+        familyId: resolvedFamilyId,
+        ipAddress: ipAddress || null,
+        userAgent: userAgent || null,
+        deviceType: deviceType || 'web',
+        deviceInfoJson: {
+          userAgent: userAgent || null,
+          deviceType: deviceType || 'web',
+        },
+        expiresAt: rtExpiresAt,
+        isRevoked: false,
+        lastActivityAt: new Date(),
+        createdBy: user.id,
+      }),
+    );
 
-    // Cập nhật lastLoginAt
     await this.userRepo.update({ id: user.id }, { lastLoginAt: new Date() });
 
     return { accessToken, refreshToken: refreshTokenValue };
@@ -173,14 +151,19 @@ export class AuthUserService {
     const email = normalizeEmail(raw);
     if (!identifier) return null;
 
-    return this.userRepo
-      .createQueryBuilder('user')
-      .where('user.isDeleted = :isDeleted', { isDeleted: false })
-      .andWhere(
-        '(LOWER(user.email) = :email OR LOWER(user.username) = :email OR user.phone = :phone)',
-        { email, phone: identifier },
-      )
-      .getOne();
+    return this.userRepo.findOne({
+      where: [
+        { email: ILike(email), isDeleted: false },
+        { username: ILike(email), isDeleted: false },
+        { phone: identifier, isDeleted: false },
+      ],
+      relations: {
+        profile: true,
+        userRoles: {
+          role: true,
+        },
+      },
+    });
   }
 
   private async ensureStudentRole(userId: string): Promise<void> {
@@ -191,7 +174,10 @@ export class AuthUserService {
     if (exist?.role?.code) return;
 
     const studentRole = await this.roleRepo.findOne({
-      where: { code: DEFAULT_CUSTOMER_ROLE, isDeleted: false },
+      where: [
+        { code: 'STUDENT', isDeleted: false },
+        { code: 'student', isDeleted: false },
+      ],
     });
     if (!studentRole) return;
 
@@ -252,19 +238,19 @@ export class AuthUserService {
     });
     if (!oauthAccount) {
       oauthAccount = this.oauthAccountRepo.create({
+        id: uuidv4(),
         userId,
         provider,
         providerUserId,
-        profileData,
-        linkedAt: new Date(),
+        profileJson: profileData,
+        createdBy: userId,
       });
       await this.oauthAccountRepo.save(oauthAccount);
       return;
     }
 
     oauthAccount.providerUserId = providerUserId;
-    oauthAccount.profileData = profileData;
-    oauthAccount.linkedAt = new Date();
+    oauthAccount.profileJson = profileData;
     await this.oauthAccountRepo.save(oauthAccount);
   }
 
@@ -280,11 +266,7 @@ export class AuthUserService {
    * Với pre-registration OTP (user chưa tồn tại), lưu userId = 'PENDING_<email_hash>'
    * để tránh FK constraint.
    */
-  private async createOtp(
-    destination: string,
-    purpose: string,
-    userId?: string,
-  ): Promise<string> {
+  private async createOtp(destination: string, purpose: string, userId?: string): Promise<string> {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const codeHash = this.hashToken(otpCode);
     const expiresAt = new Date(Date.now() + (MILLISECOND_OTP_EFFECT || 300000));
@@ -352,14 +334,15 @@ export class AuthUserService {
       await this.verificationCodeRepo.save(vc);
     } else {
       // Pre-registration: tìm theo destination + purpose (không cần userId)
-      const vc = await this.verificationCodeRepo
-        .createQueryBuilder('vc')
-        .where('vc.destination = :destination', { destination })
-        .andWhere('vc.purpose = :purpose', { purpose })
-        .andWhere('vc.codeHash = :codeHash', { codeHash })
-        .andWhere('vc.isUsed = false')
-        .andWhere('vc.expiresAt > NOW()')
-        .getOne();
+      const vc = await this.verificationCodeRepo.findOne({
+        where: {
+          destination,
+          purpose,
+          codeHash,
+          isUsed: false,
+          expiresAt: MoreThan(new Date()),
+        },
+      });
 
       if (!vc) {
         throw new BadRequestException('Mã OTP không hợp lệ hoặc đã hết hạn');
@@ -385,25 +368,13 @@ export class AuthUserService {
       throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác');
     }
 
-    if (user.status === enumData.USER_STATUS.SUSPENDED.code) {
-      throw new UnauthorizedException('Tài khoản đã bị tạm khóa. Vui lòng liên hệ hỗ trợ');
-    }
-    if (user.status === enumData.USER_STATUS.BANNED.code) {
-      throw new UnauthorizedException('Tài khoản đã bị cấm');
-    }
-    if (user.status === enumData.USER_STATUS.DELETED.code) {
-      throw new UnauthorizedException('Tài khoản không tồn tại');
+    if (user.isDeleted) {
+      throw new UnauthorizedException('Tài khoản đã bị khóa');
     }
 
     const isMatch = await user.comparePassword(data.password);
     if (!isMatch) {
       throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác');
-    }
-
-    // Kích hoạt tài khoản nếu đang PENDING (login thành công)
-    if (user.status === enumData.USER_STATUS.PENDING.code) {
-      await this.userRepo.update({ id: user.id }, { status: enumData.USER_STATUS.ACTIVE.code });
-      user.status = enumData.USER_STATUS.ACTIVE.code;
     }
 
     const tokens = await this.generateAuthTokens(user, userAgent, ipAddress, data.deviceType);
@@ -449,9 +420,6 @@ export class AuthUserService {
       email: data.email,
       phone: data.phone || null,
       passwordHash: data.password,
-      status: data.otpCode
-        ? enumData.USER_STATUS.ACTIVE.code
-        : enumData.USER_STATUS.PENDING.code,
       preferredLanguage: 'vi',
       timezone: 'Asia/Ho_Chi_Minh',
     });
@@ -480,11 +448,19 @@ export class AuthUserService {
   async refreshToken(data: RefreshTokenDto) {
     const refreshTokenHash = this.hashToken(data.refreshToken);
 
-    const tokenRecord = await this.refreshTokenRepo.findOne({
-      where: { tokenHash: refreshTokenHash, isRevoked: false },
+    const tokenRecord = await this.userSessionRepo.findOne({
+      where: { tokenHash: refreshTokenHash },
     });
 
     if (!tokenRecord) {
+      throw new UnauthorizedException('Refresh token không hợp lệ hoặc đã hết hạn');
+    }
+
+    if (tokenRecord.isRevoked) {
+      await this.userSessionRepo.update(
+        { familyId: tokenRecord.familyId, userId: tokenRecord.userId },
+        { isRevoked: true },
+      );
       throw new UnauthorizedException('Refresh token không hợp lệ hoặc đã hết hạn');
     }
 
@@ -493,15 +469,21 @@ export class AuthUserService {
     }
 
     const user = await this.userRepo.findOne({ where: { id: tokenRecord.userId } });
-    if (!user || user.status === enumData.USER_STATUS.SUSPENDED.code || user.isDeleted) {
+    if (!user || user.isDeleted) {
       throw new UnauthorizedException('Tài khoản không hợp lệ');
     }
 
-    // Revoke token cũ (rotation)
     tokenRecord.isRevoked = true;
-    await this.refreshTokenRepo.save(tokenRecord);
+    tokenRecord.updatedBy = user.id;
+    await this.userSessionRepo.save(tokenRecord);
 
-    const tokens = await this.generateAuthTokens(user);
+    const tokens = await this.generateAuthTokens(
+      user,
+      tokenRecord.userAgent,
+      tokenRecord.ipAddress,
+      tokenRecord.deviceType,
+      tokenRecord.familyId,
+    );
 
     return {
       message: 'Làm mới token thành công',
@@ -515,20 +497,9 @@ export class AuthUserService {
   async logout(user: any, refreshTokenValue?: string) {
     if (refreshTokenValue) {
       const hash = this.hashToken(refreshTokenValue);
-      await this.refreshTokenRepo.update(
-        { tokenHash: hash, userId: user.id },
-        { isRevoked: true },
-      );
+      await this.userSessionRepo.update({ tokenHash: hash, userId: user.id }, { isRevoked: true });
     } else {
-      // Revoke toàn bộ session
-      await this.refreshTokenRepo.update(
-        { userId: user.id, isRevoked: false },
-        { isRevoked: true },
-      );
-      await this.userSessionRepo.update(
-        { userId: user.id, isRevoked: false },
-        { isRevoked: true },
-      );
+      await this.userSessionRepo.update({ userId: user.id, isRevoked: false }, { isRevoked: true });
     }
     return { message: 'Đăng xuất thành công' };
   }
@@ -537,23 +508,13 @@ export class AuthUserService {
    * Dọn dẹp token hết hạn
    */
   async cleanExpiredTokens() {
-    const [rtResult, sessionResult] = await Promise.all([
-      this.refreshTokenRepo
-        .createQueryBuilder()
-        .delete()
-        .where('expiresAt < NOW()')
-        .orWhere('isRevoked = true')
-        .execute(),
-      this.userSessionRepo
-        .createQueryBuilder()
-        .delete()
-        .where('expiresAt < NOW()')
-        .orWhere('isRevoked = true')
-        .execute(),
+    const now = new Date();
+    const sessionResult = await this.userSessionRepo.delete([
+      { expiresAt: LessThan(now) },
+      { isRevoked: true },
     ]);
     return {
       message: 'Dọn dẹp token thành công',
-      deletedRefreshTokens: rtResult.affected || 0,
       deletedSessions: sessionResult.affected || 0,
     };
   }
@@ -579,7 +540,7 @@ export class AuthUserService {
         throw new BadRequestException('Không tìm thấy tài khoản với email/số điện thoại này');
       }
       const otpCode = await this.createOtp(destination, purpose, user.id);
-      // TODO: gửi email/SMS thực tế qua EmailService hoặc SmsService
+      await this.emailService.sendForgotPasswordOtp({ email: destination, otpCode });
       if (process.env.NODE_ENV !== 'production') {
         return { message: 'Gửi mã OTP thành công', _debug_otp: otpCode };
       }
@@ -587,15 +548,15 @@ export class AuthUserService {
     }
 
     // EMAIL_VERIFICATION: user chưa tồn tại (pre-registration)
-    // Lưu VC với userId=SYSTEM để tránh FK (hoặc dùng một user placeholder)
-    // Ở đây ta dùng approach: lưu vào bảng với userId là một UUID đặc biệt (không FK)
-    // Thực tế nên dùng Redis, nhưng để không phụ thuộc Redis, ta store vc trực tiếp
-    const existUser = await this.userRepo.findOne({ where: { email: destination } });
-    if (existUser && existUser.status !== enumData.USER_STATUS.PENDING.code) {
+    const existUser = await this.userRepo.findOne({
+      where: { email: destination, isDeleted: false },
+    });
+    if (existUser) {
       throw new BadRequestException('Email đã được đăng ký. Vui lòng đăng nhập');
     }
 
     const otpCode = await this.createOtpForEmail(destination, purpose);
+    await this.emailService.sendEmailVerify({ email: destination, otpCode });
     if (process.env.NODE_ENV !== 'production') {
       return { message: 'Gửi mã OTP thành công', _debug_otp: otpCode };
     }
@@ -604,35 +565,29 @@ export class AuthUserService {
 
   /**
    * Tạo OTP lưu vào bảng verification_codes mà không cần userId (pre-registration)
-   * Workaround: dùng PENDING user hoặc store raw (không FK)
    */
   private async createOtpForEmail(destination: string, purpose: string): Promise<string> {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const codeHash = this.hashToken(otpCode);
     const expiresAt = new Date(Date.now() + (MILLISECOND_OTP_EFFECT || 300000));
 
-    // Tìm hoặc tạo user PENDING để giữ FK constraint
+    // Tìm hoặc tạo user để giữ FK constraint
     let pendingUser = await this.userRepo.findOne({
-      where: { email: destination, status: enumData.USER_STATUS.PENDING.code },
+      where: { email: destination, isDeleted: false },
     });
     if (!pendingUser) {
       pendingUser = this.userRepo.create({
         email: destination,
         passwordHash: undefined,
-        status: enumData.USER_STATUS.PENDING.code,
       });
       await this.userRepo.save(pendingUser);
     }
 
     // Vô hiệu hoá OTP cũ cùng destination + purpose
-    await this.verificationCodeRepo
-      .createQueryBuilder()
-      .update()
-      .set({ isUsed: true, usedAt: new Date() })
-      .where('destination = :destination', { destination })
-      .andWhere('purpose = :purpose', { purpose })
-      .andWhere('isUsed = false')
-      .execute();
+    await this.verificationCodeRepo.update(
+      { destination, purpose, isUsed: false },
+      { isUsed: true, usedAt: new Date() },
+    );
 
     const vc = this.verificationCodeRepo.create({
       userId: pendingUser.id,
@@ -679,7 +634,6 @@ export class AuthUserService {
     await this.userRepo.save(user);
 
     // Revoke toàn bộ session cũ để bắt buộc đăng nhập lại
-    await this.refreshTokenRepo.update({ userId: user.id }, { isRevoked: true });
     await this.userSessionRepo.update({ userId: user.id }, { isRevoked: true });
 
     return { message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại' };
@@ -693,7 +647,10 @@ export class AuthUserService {
     const identifier = data.sendMethod === 'SMS' ? data.phone : data.email;
     if (!identifier) throw new BadRequestException('Vui lòng cung cấp email hoặc số điện thoại');
 
-    return this.sendOtp({ target: identifier, purpose: enumData.OTP_PURPOSE.EMAIL_VERIFICATION.code });
+    return this.sendOtp({
+      target: identifier,
+      purpose: enumData.OTP_PURPOSE.EMAIL_VERIFICATION.code,
+    });
   }
 
   /**
@@ -822,7 +779,10 @@ export class AuthUserService {
     if (dto.newPassword !== dto.confirmPassword) {
       throw new BadRequestException('Mật khẩu mới và xác nhận mật khẩu không khớp');
     }
-    return this.updatePassword({ currentPassword: dto.currentPassword, newPassword: dto.newPassword }, userDto);
+    return this.updatePassword(
+      { currentPassword: dto.currentPassword, newPassword: dto.newPassword },
+      userDto,
+    );
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -921,17 +881,12 @@ export class AuthUserService {
       user = this.userRepo.create({
         email,
         passwordHash: undefined,
-        status: enumData.USER_STATUS.ACTIVE.code,
         emailVerifiedAt: new Date(),
       });
       await this.userRepo.save(user);
     } else if (!user.emailVerifiedAt) {
       await this.userRepo.update(user.id, {
         emailVerifiedAt: new Date(),
-        status:
-          user.status === enumData.USER_STATUS.PENDING.code
-            ? enumData.USER_STATUS.ACTIVE.code
-            : user.status,
       });
       user.emailVerifiedAt = new Date();
     }
@@ -1044,7 +999,6 @@ export class AuthUserService {
       user = this.userRepo.create({
         email,
         passwordHash: undefined,
-        status: enumData.USER_STATUS.ACTIVE.code,
         emailVerifiedAt: fbUser.email ? new Date() : undefined,
       });
       await this.userRepo.save(user);
@@ -1087,9 +1041,14 @@ export class AuthUserService {
 
     if (!user) throw new BadRequestException('Tài khoản không tồn tại');
 
-    await this.verifyOtpCode(destination, data.otpCode, enumData.OTP_PURPOSE.LOGIN_2FA.code, user.id);
+    await this.verifyOtpCode(
+      destination,
+      data.otpCode,
+      enumData.OTP_PURPOSE.LOGIN_2FA.code,
+      user.id,
+    );
 
-    if (user.status === enumData.USER_STATUS.SUSPENDED.code) {
+    if (user.isDeleted) {
       throw new UnauthorizedException('Tài khoản đã bị khóa');
     }
 
@@ -1115,7 +1074,7 @@ export class AuthUserService {
   async checkPhoneAndEmail(data: { email?: string; phone?: string }) {
     if (data.email) {
       const exist = await this.userRepo.findOne({ where: { email: data.email, isDeleted: false } });
-      if (exist && exist.status !== enumData.USER_STATUS.PENDING.code) {
+      if (exist) {
         throw new BadRequestException('Email đã tồn tại');
       }
     }

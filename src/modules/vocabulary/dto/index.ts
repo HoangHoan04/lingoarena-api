@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsNotEmpty,
@@ -11,6 +12,7 @@ import {
   MaxLength,
   ValidateNested,
 } from 'class-validator';
+import { BULK_IMPORT_MAX_ITEMS } from '~/common/helpers';
 
 export class VocabularyExampleInputDto {
   @ApiProperty({ description: 'Câu ví dụ tiếng Anh' })
@@ -74,6 +76,11 @@ export class CreateVocabularyDto {
   @IsString()
   partOfSpeech: string;
 
+  @ApiPropertyOptional({ example: 'đạt được, hoàn thành một việc gì đó' })
+  @IsOptional()
+  @IsString()
+  definitionVi?: string;
+
   @ApiProperty({ example: 'to succeed in doing something' })
   @IsNotEmpty()
   @IsString()
@@ -105,20 +112,30 @@ export class CreateVocabularyDto {
   @IsNumber()
   frequencyLevel?: number;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Audio phát âm UK — URL thẳng trên vocabularies' })
+  @IsOptional()
+  @IsString()
+  audioUkUrl?: string;
+
+  @ApiPropertyOptional({ description: 'Audio phát âm US — URL thẳng trên vocabularies' })
+  @IsOptional()
+  @IsString()
+  audioUsUrl?: string;
+
+  @ApiPropertyOptional({ description: 'Ảnh minh họa từ — URL thẳng trên vocabularies' })
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+
+  @ApiPropertyOptional({ description: 'Alias TTS: resolve sang audioUkUrl nếu chưa gửi URL' })
   @IsOptional()
   @IsUUID()
   audioUkAssetId?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Alias TTS: resolve sang audioUsUrl nếu chưa gửi URL' })
   @IsOptional()
   @IsUUID()
   audioUsAssetId?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  status?: string;
 
   @ApiPropertyOptional({ description: 'Bỏ qua TTS khi nhập Excel hàng loạt' })
   @IsOptional()
@@ -126,19 +143,39 @@ export class CreateVocabularyDto {
   @IsBoolean()
   skipAudio?: boolean;
 
-  @ApiPropertyOptional({ type: [VocabularyExampleInputDto] })
+  @ApiPropertyOptional({
+    type: [VocabularyExampleInputDto],
+    description: 'Ví dụ — lưu vào examplesJson',
+  })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => VocabularyExampleInputDto)
   examples?: VocabularyExampleInputDto[];
 
-  @ApiPropertyOptional({ type: [VocabularyCollocationInputDto] })
+  @ApiPropertyOptional({ type: [VocabularyExampleInputDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => VocabularyExampleInputDto)
+  examplesJson?: VocabularyExampleInputDto[];
+
+  @ApiPropertyOptional({
+    type: [VocabularyCollocationInputDto],
+    description: 'Cụm từ — lưu vào collocationsJson',
+  })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => VocabularyCollocationInputDto)
   collocations?: VocabularyCollocationInputDto[];
+
+  @ApiPropertyOptional({ type: [VocabularyCollocationInputDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => VocabularyCollocationInputDto)
+  collocationsJson?: VocabularyCollocationInputDto[];
 
   @ApiPropertyOptional({ type: [VocabularyRelationInputDto] })
   @IsOptional()
@@ -160,6 +197,117 @@ export class CreateVocabularyDto {
 
 export class UpdateVocabularyDto extends CreateVocabularyDto {}
 
+export class ImportVocabularyExampleDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  sentence?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  translation?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  sortOrder?: number;
+}
+
+/** Dòng Excel — không bắt buộc field ở HTTP để 1 dòng lỗi không 400 cả lô. */
+export class ImportVocabularyItemDto {
+  @ApiPropertyOptional({ description: 'Số dòng trên file Excel (1-based)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  rowIndex?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  headword?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  partOfSpeech?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  definitionVi?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  definitionEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  meaningVi?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  ipaUk?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  ipaUs?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  cefrLevel?: string;
+
+  @ApiPropertyOptional({ description: 'Ảnh minh họa từ' })
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  frequencyLevel?: number;
+
+  @ApiPropertyOptional({ type: [ImportVocabularyExampleDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImportVocabularyExampleDto)
+  examples?: ImportVocabularyExampleDto[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  topicIds?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  examTypeIds?: string[];
+}
+
+export class ImportVocabularyDto {
+  @ApiProperty({ type: [ImportVocabularyItemDto] })
+  @IsArray()
+  @ArrayMaxSize(BULK_IMPORT_MAX_ITEMS)
+  @ValidateNested({ each: true })
+  @Type(() => ImportVocabularyItemDto)
+  items: ImportVocabularyItemDto[];
+
+  @ApiPropertyOptional({
+    description: 'Gán các từ tạo thành công vào bộ thẻ (append, không xóa từ cũ)',
+  })
+  @IsOptional()
+  @IsUUID()
+  deckId?: string;
+}
+
 export class FilterVocabularyDto {
   @ApiPropertyOptional()
   @IsOptional()
@@ -179,17 +327,7 @@ export class FilterVocabularyDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  status?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
   topicId?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  examTypeId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -221,12 +359,22 @@ export class CreateDeckDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  titleEn?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   slug?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  descriptionEn?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -238,15 +386,15 @@ export class CreateDeckDto {
   @IsString()
   visibility?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'A2', description: 'Alias cefrLevel (form admin cũ)' })
   @IsOptional()
   @IsString()
-  examTypeId?: string;
+  level?: string;
 
   @ApiPropertyOptional({ example: 'A2' })
   @IsOptional()
   @IsString()
-  level?: string;
+  cefrLevel?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -262,7 +410,7 @@ export class FilterDeckDto {
   @IsString()
   keyword?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Alias cefrLevel' })
   @IsOptional()
   @IsString()
   level?: string;
@@ -270,17 +418,17 @@ export class FilterDeckDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  examTypeId?: string;
+  cefrLevel?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   visibility?: string;
 
-  @ApiPropertyOptional({ description: 'toeic | ielts | daily | vstep' })
+  @ApiPropertyOptional({ description: 'Lọc bộ từ có từ vựng gắn chủ đề này' })
   @IsOptional()
   @IsString()
-  exam?: string;
+  topicId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -325,6 +473,16 @@ export class StartSessionDto {
   @ApiPropertyOptional()
   @IsOptional()
   limit?: number;
+
+  @ApiPropertyOptional({ description: 'Lọc từ theo ID chủ đề' })
+  @IsOptional()
+  @IsString()
+  topicId?: string;
+
+  @ApiPropertyOptional({ description: 'Lọc từ theo tên chủ đề' })
+  @IsOptional()
+  @IsString()
+  topic?: string;
 }
 
 export class GenerateWordTtsDto {
@@ -335,6 +493,17 @@ export class GenerateWordTtsDto {
   text: string;
 
   @ApiPropertyOptional({ description: 'Tạo lại audio dù đã có file' })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  force?: boolean;
+}
+
+export class SyncWordsAudioDto {
+  @ApiPropertyOptional({
+    description: 'Đồng bộ lại toàn bộ kể cả khi từ đã có audio',
+    default: false,
+  })
   @IsOptional()
   @Type(() => Boolean)
   @IsBoolean()

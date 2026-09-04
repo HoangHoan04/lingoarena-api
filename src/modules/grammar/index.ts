@@ -1,11 +1,6 @@
 import { MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ChildModule } from '~/common/core/decorator';
-import {
-  GrammarExampleRepo,
-  GrammarStructureRepo,
-  GrammarTopicRepo,
-  UserGrammarMasteryRepo,
-} from '~/repositories';
+import { GrammarStructureRepo, GrammarTopicRepo, UserMasteryRepo } from '~/repositories';
 import { TypeOrmExModule } from '~/typeorm';
 import { ActionLogModule } from '../action-log';
 import { GrammarService } from './service';
@@ -14,12 +9,7 @@ import { GrammarService } from './service';
   providers: [GrammarService],
   controllers: [],
   imports: [
-    TypeOrmExModule.forCustomRepository([
-      GrammarTopicRepo,
-      GrammarStructureRepo,
-      GrammarExampleRepo,
-      UserGrammarMasteryRepo,
-    ]),
+    TypeOrmExModule.forCustomRepository([GrammarTopicRepo, GrammarStructureRepo, UserMasteryRepo]),
     ActionLogModule,
   ],
   exports: [GrammarService],

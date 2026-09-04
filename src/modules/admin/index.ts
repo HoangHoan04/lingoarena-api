@@ -13,9 +13,9 @@ import { CacheCustomModule } from '../cache';
 import { CacheController } from '../cache/cache.controller';
 import { ClassroomModule } from '../classroom';
 import { AdminClassroomController } from '../classroom/controllers/admin-classroom.controller';
-import { CommerceModule } from '../commerce';
-import { AdminCommerceController } from '../commerce/controllers/admin-commerce.controller';
 import { PREFIX_MODULE } from '../config-module';
+import { ConversationModule } from '../conversation';
+import { AdminConversationController } from '../conversation/controllers/admin-conversation.controller';
 import { CourseModule } from '../course';
 import { AdminCourseController } from '../course/controllers/admin-course.controller';
 import { EmailModule } from '../email';
@@ -26,15 +26,17 @@ import { GamificationModule } from '../gamification';
 import { AdminGamificationController } from '../gamification/controllers/admin-gamification.controller';
 import { GrammarModule } from '../grammar';
 import { AdminGrammarController } from '../grammar/controllers/admin-grammar.controller';
-import { LearningModule } from '../learning';
 import { LeaderboardModule } from '../leaderboard';
 import { AdminLeaderboardController } from '../leaderboard/controllers/admin-leaderboard.controller';
+import { LearningModule } from '../learning';
 import { MediaModule } from '../media';
 import { AdminMediaController } from '../media/controllers/admin-media.controller';
 import { NotificationModule } from '../notification';
 import { AdminNotificationController } from '../notification/controllers/admin-notification.controller';
 import { NotifyModule } from '../notify';
 import { NotifyAdminController } from '../notify/controllers/notify.admin.controller';
+import { OrganizationModule } from '../organization';
+import { AdminOrganizationController } from '../organization/controllers/admin-organization.controller';
 import { QuestionModule } from '../question';
 import { AdminQuestionController } from '../question/controllers/admin-question.controller';
 import { RoleModule } from '../role';
@@ -59,9 +61,10 @@ import { AdminVocabularyController } from '../vocabulary/controllers/admin-vocab
     AdminAssessmentController,
     AdminVocabularyController,
     AdminGrammarController,
-    AdminCommerceController,
+    AdminConversationController,
     AdminClassroomController,
     AdminNotificationController,
+    AdminOrganizationController,
     AdminSupportController,
     AdminMediaController,
     AdminGamificationController,
@@ -83,9 +86,10 @@ import { AdminVocabularyController } from '../vocabulary/controllers/admin-vocab
     VocabularyModule,
     GrammarModule,
     LearningModule,
-    CommerceModule,
+    ConversationModule,
     ClassroomModule,
     NotificationModule,
+    OrganizationModule,
     SupportModule,
     MediaModule,
     GamificationModule,

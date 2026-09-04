@@ -1,76 +1,61 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { enumData } from '~/common/enums/base.enum';
-import { UserEntity } from '../auth/user.entity';
 import { PrimaryBaseEntity } from '../base.entity';
-import { ArenaMatchAnswerEntity } from './arena-match-answer.entity';
 import { ArenaMatchEntity } from './arena-match.entity';
 
+/** Bảng `arena_match_participants` — người chơi trong một trận. */
 @Entity('arena_match_participants')
-@Index('idx_arena_match_participants_unique', ['matchId', 'userId'], { unique: true })
-@Index('idx_arena_match_participants_match_id', ['matchId'])
-@Index('idx_arena_match_participants_user_id', ['userId'])
+@Index('uq_arena_match_participants_link', ['arenaMatchId', 'userId'], {
+  unique: true,
+  where: '"isDeleted" = false',
+})
+@Index('idx_arena_match_participants_user', ['userId'])
 export class ArenaMatchParticipantEntity extends PrimaryBaseEntity {
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến trận đấu Arena' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến trận đấu' })
   @Column({ type: 'uuid' })
-  matchId: string;
+  arenaMatchId: string;
 
-  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người dùng tham gia' })
+  @ApiProperty({ description: 'Khóa ngoại tham chiếu đến người chơi' })
   @Column({ type: 'uuid' })
   userId: string;
 
-  @ApiProperty({ description: 'Vị trí ghế ngồi trong phòng đấu', default: 1 })
-  @Column({ type: 'int', default: 1 })
-  seatNumber: number;
+  @ApiProperty({ description: 'Đây có phải đối thủ máy' })
+  @Column({ type: 'boolean', default: false })
+  isBot: boolean;
 
-  @ApiPropertyOptional({ enum: enumData.ARENA_PARTICIPANT_RESULT, description: 'Kết quả trận đấu' })
-  @Column({ type: 'varchar', length: 20, nullable: true })
-  result?: string;
+  @ApiProperty({ description: 'Điểm đạt được trong trận' })
+  @Column({ type: 'int', default: 0 })
+  score: number;
 
-  @ApiPropertyOptional({ description: 'Xếp hạng trong trận' })
-  @Column({ type: 'int', nullable: true })
-  rank?: number;
-
-  @ApiProperty({ description: 'Số câu trả lời đúng', default: 0 })
+  @ApiProperty({ description: 'Số câu trả lời đúng' })
   @Column({ type: 'int', default: 0 })
   correctCount: number;
 
-  @ApiProperty({ description: 'Tổng số câu đã trả lời', default: 0 })
+  @ApiProperty({ description: 'Tổng số câu đã trả lời' })
   @Column({ type: 'int', default: 0 })
   totalAnswered: number;
 
-  @ApiProperty({ description: 'Điểm số trong trận', default: 0 })
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-  score: number;
+  @ApiPropertyOptional({
+    enum: enumData.ARENA_PARTICIPANT_RESULT,
+    description: 'Kết quả, null khi trận chưa xong',
+  })
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  result?: string;
 
-  @ApiProperty({ description: 'Tổng thời gian làm bài (giây)', default: 0 })
+  @ApiProperty({ description: 'Điểm ELO trước trận' })
+  @Column({ type: 'int', default: 1000 })
+  eloBefore: number;
+
+  @ApiProperty({ description: 'Mức thay đổi ELO sau trận' })
   @Column({ type: 'int', default: 0 })
-  timeTakenSeconds: number;
+  eloChange: number;
 
-  @ApiPropertyOptional({ description: 'Điểm ELO trước trận' })
-  @Column({ type: 'int', nullable: true })
-  eloBefore?: number;
-
-  @ApiPropertyOptional({ description: 'Điểm ELO sau trận' })
-  @Column({ type: 'int', nullable: true })
-  eloAfter?: number;
-
-  @ApiPropertyOptional({ description: 'Biến động điểm ELO' })
-  @Column({ type: 'int', nullable: true })
-  eloChange?: number;
-
-  @ApiPropertyOptional({ description: 'Thời điểm rời trận / mất kết nối' })
-  @Column({ type: 'timestamptz', nullable: true })
-  leftAt?: Date;
+  @ApiProperty({ description: 'Thời điểm vào trận' })
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  joinedAt: Date;
 
   @ManyToOne(() => ArenaMatchEntity, match => match.participants, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'matchId' })
-  match?: ArenaMatchEntity;
-
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user?: UserEntity;
-
-  @OneToMany(() => ArenaMatchAnswerEntity, answer => answer.participant)
-  answers?: ArenaMatchAnswerEntity[];
+  @JoinColumn({ name: 'arenaMatchId' })
+  arenaMatch?: ArenaMatchEntity;
 }

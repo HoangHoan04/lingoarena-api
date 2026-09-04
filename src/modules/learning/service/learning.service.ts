@@ -4,30 +4,29 @@ import { v4 as uuidv4 } from 'uuid';
 import { enumData } from '~/common/enums/base.enum';
 import { transformKeys } from '~/common/helpers';
 import { PaginationDto, UserDto } from '~/dto';
-import {
-  LearningPathEntity,
-  UserDailyActivityEntity,
-  UserErrorItemEntity,
-  UserLearningGoalEntity,
-} from '~/entities';
+import { UserDailyActivityEntity, UserErrorItemEntity } from '~/entities';
 import {
   AssessmentRepo,
   ExamTypeRepo,
   GrammarStructureRepo,
-  LessonRepo,
   LearningPathItemRepo,
   LearningPathRepo,
-  MasteryRecordRepo,
-  UserLearningGoalRepo,
+  LessonRepo,
   UserDailyActivityRepo,
   UserErrorItemRepo,
+  UserLearningGoalRepo,
+  UserMasteryRepo,
   VocabularyDeckRepo,
 } from '~/repositories';
 import { UnaccentILike } from '~/typeorm/custom-operator';
 import { ActionLogService } from '../../action-log/action-log.service';
 import { GamificationService } from '../../gamification/service';
 import { I18nCustomService } from '../../i18n-custom-module/i18n.service';
-import { CompleteLearningPathItemDto, CreateLearningGoalDto, FilterUserErrorItemsDto } from '../dto';
+import {
+  CompleteLearningPathItemDto,
+  CreateLearningGoalDto,
+  FilterUserErrorItemsDto,
+} from '../dto';
 
 @Injectable()
 export class LearningService {
@@ -40,7 +39,7 @@ export class LearningService {
     private readonly assessmentRepo: AssessmentRepo,
     private readonly learningPathRepo: LearningPathRepo,
     private readonly learningPathItemRepo: LearningPathItemRepo,
-    private readonly masteryRecordRepo: MasteryRecordRepo,
+    private readonly userMasteryRepo: UserMasteryRepo,
     private readonly userErrorItemRepo: UserErrorItemRepo,
     private readonly userDailyActivityRepo: UserDailyActivityRepo,
     private readonly gamificationService: GamificationService,
@@ -84,10 +83,16 @@ export class LearningService {
   }
 
   async createGoal(dto: CreateLearningGoalDto, user: UserDto) {
-    const examType = await this.examTypeRepo.findOne({ where: { id: dto.examTypeId, isDeleted: false } });
-    if (!examType) throw new NotFoundException(this.i18n.commonTranslate('entity_not_found.exam_type'));
+    const examType = await this.examTypeRepo.findOne({
+      where: { id: dto.examTypeId, isDeleted: false },
+    });
+    if (!examType)
+      throw new NotFoundException(this.i18n.commonTranslate('entity_not_found.exam_type'));
 
-    await this.userLearningGoalRepo.update({ userId: user.id, isCurrent: true }, { isCurrent: false });
+    await this.userLearningGoalRepo.update(
+      { userId: user.id, isCurrent: true },
+      { isCurrent: false },
+    );
     const goal = await this.userLearningGoalRepo.save(
       this.userLearningGoalRepo.create({
         id: uuidv4(),
@@ -103,7 +108,13 @@ export class LearningService {
         createdBy: user.id,
       }),
     );
-    await this.writeLog(user, enumData.ACTION_LOG.CREATE.code, 'UserLearningGoalEntity', goal.id, 'Tạo mục tiêu học tập');
+    await this.writeLog(
+      user,
+      enumData.ACTION_LOG.CREATE.code,
+      'UserLearningGoalEntity',
+      goal.id,
+      'Tạo mục tiêu học tập',
+    );
     return this.findGoal(goal.id, user);
   }
 
@@ -121,7 +132,8 @@ export class LearningService {
       where: { userId: user.id, isCurrent: true, isDeleted: false },
       relations: { examType: true },
     });
-    if (!goal) throw new NotFoundException(this.i18n.commonTranslate('entity_not_found.learning_goal'));
+    if (!goal)
+      throw new NotFoundException(this.i18n.commonTranslate('entity_not_found.learning_goal'));
     return { data: transformKeys(goal) };
   }
 
@@ -130,7 +142,8 @@ export class LearningService {
       where: { id, userId: user.id, isDeleted: false },
       relations: { examType: true },
     });
-    if (!goal) throw new NotFoundException(this.i18n.commonTranslate('entity_not_found.learning_goal'));
+    if (!goal)
+      throw new NotFoundException(this.i18n.commonTranslate('entity_not_found.learning_goal'));
     return { data: transformKeys(goal) };
   }
 
@@ -138,7 +151,8 @@ export class LearningService {
     const goal = await this.userLearningGoalRepo.findOne({
       where: { userId: user.id, isCurrent: true, isDeleted: false },
     });
-    if (!goal) throw new NotFoundException(this.i18n.commonTranslate('entity_not_found.learning_goal'));
+    if (!goal)
+      throw new NotFoundException(this.i18n.commonTranslate('entity_not_found.learning_goal'));
     return goal;
   }
 
@@ -172,17 +186,20 @@ export class LearningService {
     );
 
     const [deck, assessment, lesson, grammar] = await Promise.all([
-      this.vocabularyDeckRepo.findOne({ where: { isDeleted: false }, order: { createdAt: 'DESC' } }),
+      this.vocabularyDeckRepo.findOne({
+        where: { isDeleted: false },
+        order: { createdAt: 'DESC' },
+      }),
       this.assessmentRepo.findOne({
-        where: { status: enumData.ASSESSMENT_STATUS.PUBLISHED.code, isDeleted: false },
+        where: { isDeleted: false },
         order: { createdAt: 'DESC' },
       }),
       this.lessonRepo.findOne({
-        where: { status: enumData.LESSON_STATUS.PUBLISHED.code, isDeleted: false },
+        where: { isDeleted: false },
         order: { createdAt: 'DESC' },
       }),
       this.grammarStructureRepo.findOne({
-        where: { status: enumData.CONTENT_REVIEW_STATUS.APPROVED.code, isDeleted: false },
+        where: { isDeleted: false },
         order: { createdAt: 'DESC' },
       }),
     ]);
@@ -230,17 +247,28 @@ export class LearningService {
       ),
     );
 
-    await this.writeLog(user, enumData.ACTION_LOG.CREATE.code, 'LearningPathEntity', path.id, 'Tạo lộ trình học tập');
+    await this.writeLog(
+      user,
+      enumData.ACTION_LOG.CREATE.code,
+      'LearningPathEntity',
+      path.id,
+      'Tạo lộ trình học tập',
+    );
     return this.getCurrentPath(user);
   }
 
   async getCurrentPath(user: UserDto) {
     const path = await this.learningPathRepo.findOne({
-      where: { userId: user.id, status: enumData.LEARNING_PATH_STATUS.ACTIVE.code, isDeleted: false },
+      where: {
+        userId: user.id,
+        status: enumData.LEARNING_PATH_STATUS.ACTIVE.code,
+        isDeleted: false,
+      },
       relations: { goal: { examType: true }, items: true },
       order: { createdAt: 'DESC' },
     });
-    if (!path) throw new NotFoundException(this.i18n.commonTranslate('entity_not_found.learning_path'));
+    if (!path)
+      throw new NotFoundException(this.i18n.commonTranslate('entity_not_found.learning_path'));
     path.items = (path.items || []).sort((a, b) => {
       const day = String(a.scheduledDate).localeCompare(String(b.scheduledDate));
       return day || (a.sortOrder || 0) - (b.sortOrder || 0);
@@ -262,20 +290,21 @@ export class LearningService {
     item.updatedBy = user.id;
     await this.learningPathItemRepo.save(item);
 
-    const questionsAnswered = dto.questionsAnswered ?? (item.itemType === enumData.LEARNING_PATH_ITEM_TYPE.PRACTICE_SET.code ? 1 : 0);
+    const questionsAnswered =
+      dto.questionsAnswered ??
+      (item.itemType === enumData.LEARNING_PATH_ITEM_TYPE.PRACTICE_SET.code ? 1 : 0);
     await this.bumpDailyActivity(user.id, {
       lessonsCompleted: item.itemType === enumData.LEARNING_PATH_ITEM_TYPE.LESSON.code ? 1 : 0,
       questionsAnswered,
-      questionsCorrect: dto.questionsCorrect ?? 0,
-      vocabularyReviewed: item.itemType === enumData.LEARNING_PATH_ITEM_TYPE.FLASHCARD_REVIEW.code ? 1 : 0,
-      assessmentsAttempted: item.itemType === enumData.LEARNING_PATH_ITEM_TYPE.MOCK_EXAM.code ? 1 : 0,
+      vocabReviewed:
+        item.itemType === enumData.LEARNING_PATH_ITEM_TYPE.FLASHCARD_REVIEW.code ? 1 : 0,
     });
 
     if (item.itemType === enumData.LEARNING_PATH_ITEM_TYPE.PRACTICE_SET.code) {
       await this.upsertMastery(user.id, enumData.MASTERY_ENTITY_TYPE.GRAMMAR.code, item.itemId);
     }
     if (item.itemType === enumData.LEARNING_PATH_ITEM_TYPE.FLASHCARD_REVIEW.code) {
-      await this.upsertMastery(user.id, enumData.MASTERY_ENTITY_TYPE.VOCABULARY.code, item.itemId);
+      await this.upsertMastery(user.id, enumData.MASTERY_ENTITY_TYPE.TOPIC.code, item.itemId);
     }
 
     const pointReason =
@@ -284,7 +313,13 @@ export class LearningService {
         : item.itemType === enumData.LEARNING_PATH_ITEM_TYPE.MOCK_EXAM.code
           ? enumData.POINT_REASON.ASSESSMENT.code
           : enumData.POINT_REASON.REVIEW.code;
-    await this.gamificationService.awardPoints(user.id, 10, pointReason, 'learning_path_item', item.id);
+    await this.gamificationService.awardPoints(
+      user.id,
+      10,
+      pointReason,
+      'learning_path_item',
+      item.id,
+    );
 
     return { data: transformKeys(item) };
   }
@@ -295,24 +330,27 @@ export class LearningService {
       {
         userId: user.id,
         isDeleted: false,
-        ...(where.isResolved !== undefined && where.isResolved !== null ? { isResolved: Boolean(where.isResolved) } : {}),
+        ...(where.isResolved !== undefined && where.isResolved !== null
+          ? { isResolved: Boolean(where.isResolved) }
+          : {}),
       },
     ];
     if (where.keyword) {
-      whereCon[0].errorReason = UnaccentILike(`%${where.keyword}%`);
+      whereCon[0].description = UnaccentILike(`%${where.keyword}%`);
       whereCon.push({
         userId: user.id,
         isDeleted: false,
-        ...(where.isResolved !== undefined && where.isResolved !== null ? { isResolved: Boolean(where.isResolved) } : {}),
-        userNote: UnaccentILike(`%${where.keyword}%`),
+        ...(where.isResolved !== undefined && where.isResolved !== null
+          ? { isResolved: Boolean(where.isResolved) }
+          : {}),
+        wrongText: UnaccentILike(`%${where.keyword}%`),
       });
     }
     const [data, total] = await this.userErrorItemRepo.findAndCount({
       where: whereCon,
       skip,
       take: take || 20,
-      order: { lastWrongAt: 'DESC' },
-      relations: { question: { currentVersion: true, questionType: true } },
+      order: { lastOccurredAt: 'DESC' },
     });
     return { data: transformKeys(data), total };
   }
@@ -327,17 +365,17 @@ export class LearningService {
     activity.studyMinutes += inc.studyMinutes || 0;
     activity.lessonsCompleted += inc.lessonsCompleted || 0;
     activity.questionsAnswered += inc.questionsAnswered || 0;
-    activity.questionsCorrect += inc.questionsCorrect || 0;
-    activity.vocabularyReviewed += inc.vocabularyReviewed || 0;
-    activity.assessmentsAttempted += inc.assessmentsAttempted || 0;
-    activity.arenaMatchesPlayed += inc.arenaMatchesPlayed || 0;
+    activity.vocabReviewed += inc.vocabReviewed || 0;
+    activity.arenaMatches += inc.arenaMatches || 0;
     activity.pointsEarned += inc.pointsEarned || 0;
     return this.userDailyActivityRepo.save(activity);
   }
 
   private async getOrCreateDailyActivity(userId: string) {
     const today = this.today();
-    let activity = await this.userDailyActivityRepo.findOne({ where: { userId, activityDate: today } });
+    let activity = await this.userDailyActivityRepo.findOne({
+      where: { userId, activityDate: today },
+    });
     if (!activity) {
       activity = await this.userDailyActivityRepo.save(
         this.userDailyActivityRepo.create({
@@ -347,11 +385,11 @@ export class LearningService {
           studyMinutes: 0,
           lessonsCompleted: 0,
           questionsAnswered: 0,
-          questionsCorrect: 0,
-          vocabularyReviewed: 0,
-          assessmentsAttempted: 0,
-          arenaMatchesPlayed: 0,
+          vocabReviewed: 0,
+          arenaMatches: 0,
           pointsEarned: 0,
+          streakCount: 0,
+          goalMet: false,
           createdBy: userId,
         }),
       );
@@ -360,26 +398,27 @@ export class LearningService {
   }
 
   private async upsertMastery(userId: string, entityType: string, entityId: string) {
-    const found = await this.masteryRecordRepo.findOne({
-      where: { userId, entityType, entityId },
+    const found = await this.userMasteryRepo.findOne({
+      where: { userId, targetType: entityType, targetId: entityId },
     });
     if (found) {
-      found.evidenceCount += 1;
+      found.practiceCount += 1;
+      found.correctCount += 1;
       found.masteryScore = Math.min(100, Number(found.masteryScore || 0) + 5);
-      found.confidenceScore = Math.min(1, Number(found.confidenceScore || 0.5) + 0.05);
-      found.calculatedAt = new Date();
-      return this.masteryRecordRepo.save(found);
+      found.lastPracticedAt = new Date();
+      return this.userMasteryRepo.save(found);
     }
-    return this.masteryRecordRepo.save(
-      this.masteryRecordRepo.create({
+    return this.userMasteryRepo.save(
+      this.userMasteryRepo.create({
         id: uuidv4(),
         userId,
-        entityType,
-        entityId,
+        targetType: entityType,
+        targetId: entityId,
         masteryScore: 10,
-        confidenceScore: 0.55,
-        evidenceCount: 1,
-        calculatedAt: new Date(),
+        practiceCount: 1,
+        correctCount: 1,
+        incorrectCount: 0,
+        lastPracticedAt: new Date(),
         createdBy: userId,
       }),
     );
