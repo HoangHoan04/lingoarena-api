@@ -231,6 +231,14 @@ export function buildQuestionPayload(question: any, publicOnly = false) {
     correctAnswerJson: publicOnly ? undefined : question.correctAnswerJson,
     imageUrl: question.imageUrl || (typeof contentJson.imageUrl === 'string' ? contentJson.imageUrl : null),
     audioUrl: typeof contentJson.audioUrl === 'string' ? contentJson.audioUrl : null,
+    minWords: question.minWords ?? contentJson.minWords ?? null,
+    maxWords: question.maxWords ?? contentJson.maxWords ?? null,
+    timeLimitMin: question.timeLimitMin ?? contentJson.timeLimitMin ?? null,
+    sampleAnswer: question.sampleAnswer || contentJson.sampleAnswer || null,
+    sampleBand: question.sampleBand || contentJson.sampleBand || null,
+    sampleAnalysisVi: question.sampleAnalysisVi || contentJson.sampleAnalysisVi || null,
+    outlineIdeasJson: question.outlineIdeasJson || contentJson.outlineIdeas || null,
+    suggestedVocabJson: question.suggestedVocabJson || contentJson.suggestedVocab || null,
     options,
   };
 
